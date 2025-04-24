@@ -23,6 +23,22 @@ services:
       - links_network
     command: mix phx.server
 
+  # Elixir Backend с SQLite - без зависимостей
+  elixir_backend_lite:
+    build: ./elixir_backend
+    container_name: elixir_backend_lite
+    volumes:
+      - ./elixir_backend:/app
+    environment:
+      - MIX_ENV=dev
+      - PORT=4000
+      - PHX_HOST=localhost
+    ports:
+      - "4000:4000"
+    networks:
+      - links_network
+    command: bash -c "mix deps.get && mix sqlite.setup && mix phx.server"
+
   # Cassandra база данных
   cassandra:
     image: cassandra:4.1
@@ -52,7 +68,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_DB=dev-file
       - KC_HEALTH_ENABLED=true
-    command: 
+    command:
       - start-dev
     ports:
       - "8080:8080"
@@ -124,4 +140,4 @@ volumes:
 
 networks:
   links_network:
-    driver: bridge 
+    driver: bridge

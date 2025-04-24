@@ -23,6 +23,29 @@ defmodule LinksApi.Schemas.Link do
     |> validate_url(:url)
   end
 
+  def update_changeset(link, attrs, _params) do
+    now = DateTime.utc_now()
+    attrs = Map.put(attrs, :updated_at, now)
+
+    link
+    |> cast(attrs, [:name, :url, :description, :group_id, :updated_at])
+    |> validate_required([:name, :url])
+    |> validate_url(:url)
+  end
+
+  def create_changeset(link, attrs, _params) do
+    now = DateTime.utc_now()
+    attrs = attrs
+      |> Map.put(:created_at, now)
+      |> Map.put(:updated_at, now)
+      |> Map.put_new(:id, UUID.uuid4())
+
+    link
+    |> cast(attrs, [:id, :name, :url, :description, :group_id, :created_at, :updated_at])
+    |> validate_required([:name, :url])
+    |> validate_url(:url)
+  end
+
   # Валидация URL формата
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn _, url ->

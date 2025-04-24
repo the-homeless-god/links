@@ -1,7 +1,7 @@
 defmodule LinksApiWeb.RedirectController do
   use Phoenix.Controller
   require Logger
-  alias LinksApi.Repo
+  alias LinksApi.SqliteRepo
   alias LinksApi.SystemMetrics
   import LinksApiWeb.Layouts, only: [sigil_p: 2]
 
@@ -10,7 +10,7 @@ defmodule LinksApiWeb.RedirectController do
     # Логируем попытку редиректа
     Logger.info("Redirect attempt", id: id, ip: conn.remote_ip |> :inet.ntoa() |> to_string())
 
-    case Repo.get_link(id) do
+    case SqliteRepo.get_link(id) do
       {:ok, link} ->
         # Логируем успешный редирект
         Logger.info("Successful redirect",
@@ -32,7 +32,7 @@ defmodule LinksApiWeb.RedirectController do
 
       {:error, :not_found} ->
         # Логируем неудачный редирект
-        Logger.warn("Link not found for redirect", id: id)
+        Logger.warning("Link not found for redirect", id: id)
 
         conn
         |> put_status(:not_found)
@@ -57,5 +57,22 @@ defmodule LinksApiWeb.RedirectController do
   def admin_redirect(conn, _params) do
     conn
     |> redirect(to: ~p"/admin/links")
+  end
+
+  # Перенаправления для неправильных маршрутов API
+  def redirect_to_admin(conn, _params) do
+    conn
+    |> redirect(to: ~p"/admin")
+  end
+
+  def redirect_to_admin_path(conn, %{"path" => path}) do
+    path_string = Enum.join(path, "/")
+    conn
+    |> redirect(to: ~p"/admin/#{path_string}")
+  end
+
+  def redirect_to_dashboard(conn, _params) do
+    conn
+    |> redirect(to: ~p"/dashboard")
   end
 end

@@ -50,8 +50,9 @@ defmodule LinksApi.MixProject do
       {:joken, "~> 2.5"},
       {:httpoison, "~> 2.0"},
       {:xandra, "~> 0.14"},
+      {:ecto_sqlite3, "~> 0.10.2"},
       {:cors_plug, "~> 3.0"},
-      {:backpex, "~> 0.11.0"},
+      {:backpex, "~> 0.12.0"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.10"},
       # Зависимости для логирования
@@ -81,6 +82,9 @@ defmodule LinksApi.MixProject do
       "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "cassandra.setup": ["run priv/repo/setup_cassandra.exs"],
+      "sqlite.setup": ["run priv/repo/setup_sqlite.exs"],
+      "db.setup": ["run priv/repo/setup_initial.exs"],
+      "run.dev": ["db.setup", "phx.server"],
       "test.all": ["test", "test.integration", "test.load"],
       "test.integration": ["run test/integration/run_tests.exs"],
       "test.load": ["run test/load/run_load_tests.exs"]

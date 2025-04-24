@@ -5,21 +5,20 @@ defmodule LinksApi.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      # Запуск Telemetry для сбора метрик
-      LinksApi.Telemetry,
+    # Определяем какой репозиторий использовать (SQLite или Cassandra)
+    repo_module = Application.get_env(:links_api, :repo_module, LinksApi.Repo)
+    Logger.info("Используем модуль репозитория: #{repo_module}")
 
+    children = [
       # Запуск Endpoint
       LinksApiWeb.Endpoint,
 
-      # Запуск репозитория
-      LinksApi.Repo,
+      # Запуск репозитория (динамически выбираем какой)
+      repo_module,
 
       # Запуск Pubsub для LiveView
       {Phoenix.PubSub, name: LinksApi.PubSub},
 
-      # Запуск Finch
-      {Finch, name: LinksApi.Finch}
     ]
 
     # Настройка режима супервизора
@@ -29,13 +28,13 @@ defmodule LinksApi.Application do
     result = Supervisor.start_link(children, opts)
 
     # Настройка Keycloak после запуска Supervisor
-    setup_keycloak()
+    setup_keycloak_if_needed()
 
     result
   end
 
-  # Настраиваем сервер Keycloak
-  defp setup_keycloak() do
+  # Настраиваем сервер Keycloak если требуется
+  defp setup_keycloak_if_needed() do
     setup_keycloak = System.get_env("SETUP_KEYCLOAK", "false")
 
     if setup_keycloak == "true" do

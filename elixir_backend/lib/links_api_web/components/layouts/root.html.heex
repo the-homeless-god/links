@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme={assigns[:theme] || "light"}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,11 +7,17 @@
     <.live_title>
       <%= assigns[:page_title] || "Сервис управления ссылками" %>
     </.live_title>
-    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+    <!-- TailwindCSS и другие необходимые стили для Backpex -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.9/dist/full.min.css" rel="stylesheet">
+    <!-- Вместо героиконов используем Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Локальные стили с абсолютными путями -->
+    <link phx-track-static rel="stylesheet" href="/assets/app.css" />
+    <script defer phx-track-static type="text/javascript" src="/assets/app.js">
     </script>
   </head>
-  <body class="min-h-screen bg-gray-50">
+  <body class="min-h-screen">
     <%= @inner_content %>
   </body>
-</html> 
+</html>

@@ -54,7 +54,7 @@
 
 - **Бэкенд**: Elixir 1.14+, Phoenix 1.7+
 - **Админ-интерфейс**: Phoenix LiveView, Backpex
-- **База данных**: Apache Cassandra 4+
+- **База данных**: Apache Cassandra 4+ или SQLite (для локальной разработки)
 - **Аутентификация**: Keycloak 21+
 - **Логирование**: ELK Stack (Elasticsearch, Logstash, Kibana)
 - **Метрики**: Prometheus, Telemetry
@@ -93,14 +93,16 @@
    mix deps.get
    ```
 
-4. Подготовка базы данных Cassandra:
-
-   ```bash
-   docker-compose up -d cassandra
-   mix cassandra.setup
-   ```
-
 ### Запуск для разработки
+
+#### С Cassandra
+
+Подготовка базы данных Cassandra:
+
+```bash
+docker-compose up -d cassandra
+mix cassandra.setup
+```
 
 Локальный запуск приложения без Docker:
 
@@ -114,6 +116,34 @@ mix phx.server
 ```bash
 docker-compose up -d
 ```
+
+#### С SQLite (без внешних зависимостей)
+
+Для локальной разработки без необходимости запускать Cassandra, Keycloak и ELK Stack, можно использовать SQLite:
+
+1. Подготовка SQLite базы данных:
+
+   ```bash
+   cd elixir_backend
+   mix sqlite.setup
+   ```
+
+2. Запуск приложения с SQLite:
+
+   ```bash
+   cd elixir_backend
+   MIX_ENV=dev mix phx.server
+   ```
+
+   Приложение будет использовать SQLite вместо Cassandra для хранения данных, и не будет требовать запуска других сервисов.
+
+3. Или через Docker Compose:
+
+   ```bash
+   docker-compose up -d elixir_backend_lite
+   ```
+
+   Это запустит только контейнер с Elixir, используя SQLite для хранения данных.
 
 ## Запуск в производственной среде
 

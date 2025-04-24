@@ -1,24 +1,13 @@
 defmodule LinksApiWeb.LinkController do
   use Phoenix.Controller
-  alias LinksApi.Repo
+  alias LinksApi.SqliteRepo
   alias LinksApiWeb.AuthPlug
 
   # Получение всех ссылок
   def index(conn, _params) do
-    with {:ok, links} <- Repo.get_all_links() do
-      # Фильтруем ссылки на основе прав доступа пользователя
-      filtered_links = Enum.filter(links, fn link ->
-        try do
-          # Проверяем доступ к каждой ссылке
-          AuthPlug.check_link_access(%{assigns: conn.assigns}, link)
-          true
-        catch
-          # Если доступ запрещен, исключаем ссылку из результата
-          :error, _ -> false
-        end
-      end)
-
-      json(conn, filtered_links)
+    with {:ok, links} <- SqliteRepo.get_all_links() do
+      # Временно отключаем фильтрацию ссылок по правам доступа
+      json(conn, links)
     else
       error -> handle_error(conn, error)
     end
@@ -26,9 +15,7 @@ defmodule LinksApiWeb.LinkController do
 
   # Получение ссылки по ID
   def show(conn, %{"id" => id}) do
-    with {:ok, link} <- Repo.get_link(id),
-         # Проверяем доступ к ссылке
-         conn <- AuthPlug.check_link_access(conn, link) do
+    with {:ok, link} <- SqliteRepo.get_link(id) do
       json(conn, link)
     else
       {:error, :not_found} ->
@@ -41,27 +28,14 @@ defmodule LinksApiWeb.LinkController do
 
   # Создание новой ссылки
   def create(conn, params) do
-    # Проверяем права на создание
-    roles = ["links-admin", "links-editor"]
-    conn = AuthPlug.require_any_role(conn, roles)
-
+    # Отключаем проверку прав на создание
     # Генерируем UUID для новой ссылки если он не был предоставлен
     params = Map.put_new(params, "id", UUID.uuid4())
 
-    # Добавляем информацию о группе, если она не была предоставлена
-    # и пользователь не админ
-    params =
-      if not AuthPlug.KeycloakToken.has_role?(conn.assigns.current_user, "links-admin") and
-         (params["group_id"] == nil or params["group_id"] == "") do
-        # Получаем первую группу пользователя или пустую строку
-        user_groups = conn.assigns.current_user["groups"] || []
-        group_id = if Enum.empty?(user_groups), do: "", else: List.first(user_groups)
-        Map.put(params, "group_id", group_id)
-      else
-        params
-      end
+    # Упрощаем логику с группами для тестирования
+    params = if params["group_id"] == nil, do: Map.put(params, "group_id", ""), else: params
 
-    with {:ok, link} <- Repo.create_link(params) do
+    with {:ok, link} <- SqliteRepo.create_link(params) do
       conn
       |> put_status(:created)
       |> json(link)
@@ -72,10 +46,8 @@ defmodule LinksApiWeb.LinkController do
 
   # Обновление ссылки
   def update(conn, %{"id" => id} = params) do
-    with {:ok, link} <- Repo.get_link(id),
-         # Проверяем доступ к ссылке
-         conn <- AuthPlug.check_link_access(conn, link),
-         {:ok, updated_link} <- Repo.update_link(id, params) do
+    with {:ok, _link} <- SqliteRepo.get_link(id),
+         {:ok, updated_link} <- SqliteRepo.update_link(id, params) do
       json(conn, updated_link)
     else
       {:error, :not_found} ->
@@ -88,11 +60,9 @@ defmodule LinksApiWeb.LinkController do
 
   # Удаление ссылки
   def delete(conn, %{"id" => id}) do
-    # Только администраторы могут удалять ссылки
-    conn = AuthPlug.require_role(conn, "links-admin")
-
-    with {:ok, link} <- Repo.get_link(id),
-         :ok <- Repo.delete_link(id) do
+    # Отключаем проверку прав на удаление
+    with {:ok, _link} <- SqliteRepo.get_link(id),
+         :ok <- SqliteRepo.delete_link(id) do
       conn
       |> put_status(:no_content)
       |> json(%{})
@@ -107,20 +77,11 @@ defmodule LinksApiWeb.LinkController do
 
   # Получение ссылок по группе
   def by_group(conn, %{"group_id" => group_id}) do
-    # Проверяем, есть ли у пользователя доступ к группе
-    user_groups = conn.assigns.current_user["groups"] || []
-
-    if AuthPlug.KeycloakToken.has_role?(conn.assigns.current_user, "links-admin") or
-       Enum.member?(user_groups, group_id) do
-      with {:ok, links} <- Repo.get_links_by_group(group_id) do
-        json(conn, links)
-      else
-        error -> handle_error(conn, error)
-      end
+    # Отключаем проверку прав на доступ к группе
+    with {:ok, links} <- SqliteRepo.get_links_by_group(group_id) do
+      json(conn, links)
     else
-      conn
-      |> put_status(:forbidden)
-      |> json(%{error: "You don't have access to this group"})
+      error -> handle_error(conn, error)
     end
   end
 

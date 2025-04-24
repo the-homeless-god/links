@@ -1,10 +1,15 @@
 defmodule LinksApi.RepoAdapter do
   @moduledoc """
-  Адаптер для работы Backpex с нашим Cassandra репозиторием.
+  Адаптер для работы Backpex с нашим репозиторием.
   Имитирует поведение Ecto.Repo для совместимости с Backpex.
+  Поддерживает как Cassandra, так и SQLite.
   """
-  alias LinksApi.Repo
   alias LinksApi.Schemas.Link
+
+  # Получаем модуль репозитория динамически из конфигурации
+  defp repo_module do
+    Application.get_env(:links_api, :repo_module, LinksApi.Repo)
+  end
 
   @doc """
   Валидирует конфигурацию адаптера
@@ -18,7 +23,7 @@ defmodule LinksApi.RepoAdapter do
 
   # Получение всех записей с поддержкой пагинации и сортировки
   def all(Link, opts \\ []) do
-    {:ok, links} = Repo.get_all_links()
+    {:ok, links} = repo_module().get_all_links()
 
     # Применяем фильтры, если они есть
     links = apply_filters(links, opts[:filters])
@@ -41,7 +46,7 @@ defmodule LinksApi.RepoAdapter do
 
   # Получение записи по ID
   def get(Link, id) do
-    case Repo.get_link(id) do
+    case repo_module().get_link(id) do
       {:ok, link} -> to_schema(link)
       _ -> nil
     end
@@ -54,7 +59,7 @@ defmodule LinksApi.RepoAdapter do
       |> Map.take([:id, :name, :url, :description, :group_id])
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
-    case Repo.create_link(params) do
+    case repo_module().create_link(params) do
       {:ok, link} -> {:ok, to_schema(link)}
       error -> {:error, changeset_with_error(changeset, error)}
     end
@@ -68,21 +73,58 @@ defmodule LinksApi.RepoAdapter do
       |> Map.take([:name, :url, :description, :group_id])
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
-    case Repo.update_link(id, changes) do
+    case repo_module().update_link(id, changes) do
       {:ok, link} -> {:ok, to_schema(link)}
       error -> {:error, changeset_with_error(changeset, error)}
     end
   end
 
+  # Подсчет количества записей
+  def count(criteria, _params, live_resource) do
+    {:ok, links} = repo_module().get_all_links()
+
+    # Получаем фильтры
+    filters_criteria = Keyword.get(criteria, :filters, [])
+
+    # Применяем фильтры
+    links = apply_filters(links, filters_criteria)
+
+    # Возвращаем общее количество записей
+    {:ok, length(links)}
+  end
+
+  # Получение списка записей
+  def list(criteria, _params, _live_resource) do
+    {:ok, links} = repo_module().get_all_links()
+
+    # Получаем фильтры и параметры пагинации
+    filters_criteria = Keyword.get(criteria, :filters, [])
+    limit = Keyword.get(criteria, :limit)
+    offset = Keyword.get(criteria, :offset, 0)
+    order_by = Keyword.get(criteria, :order_by)
+
+    # Применяем фильтры
+    links = apply_filters(links, filters_criteria)
+
+    # Применяем сортировку
+    links = apply_sort(links, order_by)
+
+    # Применяем пагинацию
+    links = apply_pagination(links, limit, offset)
+
+    # Преобразуем в схему и возвращаем результат
+    {:ok, Enum.map(links, &to_schema/1)}
+  end
+
   # Удаление записи
   def delete(%Link{id: id}) do
-    case Repo.delete_link(id) do
+    case repo_module().delete_link(id) do
       :ok -> {:ok, %Link{id: id}}
       error -> {:error, error}
     end
   end
 
-  # Преобразование данных из Cassandra в схему Ecto
+  # Преобразование данных из репозитория в схему Ecto
   defp to_schema(link) when is_map(link) do
     %Link{
       id: link["id"],
