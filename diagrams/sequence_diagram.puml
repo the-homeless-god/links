@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+title Диаграмма последовательности системы управления ссылками
+
+actor "Пользователь" as User
+participant "Phoenix\nLiveView" as Phoenix
+participant "Keycloak" as Keycloak
+participant "Elixir App" as Elixir
+database "Cassandra DB" as DB
+participant "Logstash" as Logstash
+database "Elasticsearch" as ES
+
+== Аутентификация ==
+User -> Keycloak: Запрос на аутентификацию
+Keycloak -> User: Форма аутентификации
+User -> Keycloak: Логин и пароль
+Keycloak -> Keycloak: Проверка учетных данных
+Keycloak -> User: JWT-токен
+User -> Phoenix: Переход в админку с JWT-токеном
+
+== Просмотр ссылок ==
+User -> Phoenix: Запрос списка ссылок
+Phoenix -> Keycloak: Проверка токена
+Keycloak -> Phoenix: Подтверждение токена
+Phoenix -> Elixir: Запрос данных
+Elixir -> DB: SELECT * FROM links
+Elixir -> Logstash: Логирование операции чтения
+DB -> Elixir: Результаты запроса
+Logstash -> ES: Индексирование лога
+Elixir -> Phoenix: LiveView socket update
+Phoenix -> User: Отображение списка ссылок
+
+== Редактирование ссылки ==
+User -> Phoenix: Редактирование данных ссылки
+Phoenix -> Elixir: LiveView событие
+Elixir -> DB: UPDATE links SET ... WHERE id = ?
+Elixir -> Logstash: Логирование операции обновления
+DB -> Elixir: Подтверждение операции
+Logstash -> ES: Индексирование лога
+Elixir -> Phoenix: LiveView socket update
+Phoenix -> User: Обновление интерфейса
+
+== Анализ логов ==
+User -> ES: Запрос на просмотр логов через Kibana
+ES -> User: Данные логов и метрики
+
+@enduml 

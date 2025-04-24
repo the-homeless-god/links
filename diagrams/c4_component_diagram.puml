@@ -1,0 +1,32 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4 диаграмма системы управления ссылками
+
+Person(user, "Пользователь", "Администратор системы, который управляет ссылками")
+
+System_Boundary(link_system, "Система управления ссылками") {
+    Container(elixir_backend, "Elixir Backend", "Elixir, Phoenix", "Обрабатывает бизнес-логику, предоставляет API")
+    Container(admin_interface, "Admin Interface", "Phoenix LiveView, Backpex", "Предоставляет интерфейс администратора для управления ссылками")
+    Container(keycloak, "Keycloak", "Java", "Обеспечивает аутентификацию и авторизацию пользователей")
+    ContainerDb(cassandra, "База данных", "Apache Cassandra", "Хранит информацию о ссылках с использованием Single Table Design")
+    
+    System_Boundary(elk_stack, "Система логирования") {
+        Container(elasticsearch, "Elasticsearch", "Java", "Хранение и индексирование логов")
+        Container(logstash, "Logstash", "Ruby, Java", "Сбор и обработка логов")
+        Container(kibana, "Kibana", "JavaScript", "Визуализация и анализ логов")
+    }
+}
+
+Rel(user, admin_interface, "Использует для управления ссылками", "HTTPS")
+Rel(user, keycloak, "Проходит аутентификацию", "HTTPS")
+Rel(admin_interface, elixir_backend, "Вызывает API", "HTTPS/JSON")
+Rel(admin_interface, keycloak, "Проверяет права доступа", "OAuth 2.0/OIDC")
+Rel(elixir_backend, keycloak, "Проверяет права доступа", "OAuth 2.0/OIDC")
+Rel(elixir_backend, cassandra, "Читает и записывает данные", "CQL")
+Rel(elixir_backend, logstash, "Отправляет логи", "TCP/UDP")
+Rel(admin_interface, logstash, "Отправляет логи", "TCP/UDP")
+Rel(logstash, elasticsearch, "Индексирует логи", "HTTP")
+Rel(kibana, elasticsearch, "Визуализирует данные", "HTTP")
+
+@enduml 

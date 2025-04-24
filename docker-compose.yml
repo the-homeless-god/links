@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # Elixir Backend API и админка на Phoenix + Backpex
+  elixir_backend:
+    build: ./elixir_backend
+    container_name: elixir_backend
+    volumes:
+      - ./elixir_backend:/app
+    environment:
+      - MIX_ENV=dev
+      - PORT=4000
+      - PHX_HOST=localhost
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5044
+    depends_on:
+      - cassandra
+      - keycloak
+      - logstash
+    ports:
+      - "4000:4000"
+    networks:
+      - links_network
+    command: mix phx.server
+
+  # Cassandra база данных
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=links_cluster
+      - CASSANDRA_ENDPOINT_SNITCH=SimpleSnitch
+      - CASSANDRA_DC=datacenter1
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra", "-e", "describe keyspaces"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - links_network
+
+  # Keycloak для аутентификации и авторизации
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1
+    container_name: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=dev-file
+      - KC_HEALTH_ENABLED=true
+    command: 
+      - start-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - links_network
+
+  # Elasticsearch для хранения и индексирования логов
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - links_network
+
+  # Logstash для сбора и обработки логов
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    container_name: logstash
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch
+    networks:
+      - links_network
+
+  # Kibana для визуализации и анализа логов
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - links_network
+
+volumes:
+  cassandra_data:
+  keycloak_data:
+  elasticsearch_data:
+
+networks:
+  links_network:
+    driver: bridge 
