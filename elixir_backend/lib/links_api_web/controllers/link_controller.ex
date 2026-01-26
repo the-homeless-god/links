@@ -27,51 +27,78 @@ defmodule LinksApiWeb.LinkController do
   end
 
   # Создание новой ссылки
-  def create(conn, params) do
-    # Отключаем проверку прав на создание
+  def create(conn, _params) do
+    # Получаем параметры из тела запроса
+    params = conn.body_params
     # Генерируем UUID для новой ссылки если он не был предоставлен
     params = Map.put_new(params, "id", UUID.uuid4())
 
     # Упрощаем логику с группами для тестирования
     params = if params["group_id"] == nil, do: Map.put(params, "group_id", ""), else: params
 
-    with {:ok, link} <- SqliteRepo.create_link(params) do
-      conn
-      |> put_status(:created)
-      |> json(link)
-    else
-      error -> handle_error(conn, error)
+    case SqliteRepo.create_link(params) do
+      {:ok, link} ->
+        conn
+        |> put_status(:created)
+        |> json(link)
+      {:error, :name_already_exists} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
+      {:error, :name_required} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "name_required", message: "Имя ссылки обязательно для заполнения"})
+      error ->
+        handle_error(conn, error)
     end
   end
 
   # Обновление ссылки
-  def update(conn, %{"id" => id} = params) do
-    with {:ok, _link} <- SqliteRepo.get_link(id),
-         {:ok, updated_link} <- SqliteRepo.update_link(id, params) do
-      json(conn, updated_link)
-    else
+  def update(conn, %{"id" => id}) do
+    # Получаем параметры из тела запроса
+    params = conn.body_params
+
+    case SqliteRepo.get_link(id) do
+      {:ok, _link} ->
+        case SqliteRepo.update_link(id, params) do
+          {:ok, updated_link} ->
+            json(conn, updated_link)
+          {:error, :name_already_exists} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
+          error ->
+            handle_error(conn, error)
+        end
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Link not found"})
-      error -> handle_error(conn, error)
+      error ->
+        handle_error(conn, error)
     end
   end
 
   # Удаление ссылки
   def delete(conn, %{"id" => id}) do
     # Отключаем проверку прав на удаление
-    with {:ok, _link} <- SqliteRepo.get_link(id),
-         :ok <- SqliteRepo.delete_link(id) do
-      conn
-      |> put_status(:no_content)
-      |> json(%{})
-    else
+    case SqliteRepo.get_link(id) do
+      {:ok, _link} ->
+        case SqliteRepo.delete_link(id) do
+          :ok ->
+            conn
+            |> put_status(:no_content)
+            |> json(%{success: true})
+          error ->
+            handle_error(conn, error)
+        end
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Link not found"})
-      error -> handle_error(conn, error)
+      error ->
+        handle_error(conn, error)
     end
   end
 

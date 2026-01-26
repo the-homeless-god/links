@@ -75,6 +75,8 @@ defmodule LinksApi.RepoAdapter do
 
     case repo_module().update_link(id, changes) do
       {:ok, link} -> {:ok, to_schema(link)}
+      {:error, :name_already_exists} ->
+        {:error, changeset_with_error(changeset, {:error, :name_already_exists})}
       error -> {:error, changeset_with_error(changeset, error)}
     end
   end
@@ -126,6 +128,7 @@ defmodule LinksApi.RepoAdapter do
 
   # Преобразование данных из репозитория в схему Ecto
   defp to_schema(link) when is_map(link) do
+    name = link["name"] || link["id"]
     %Link{
       id: link["id"],
       name: link["name"],
@@ -133,13 +136,24 @@ defmodule LinksApi.RepoAdapter do
       description: link["description"],
       group_id: link["group_id"],
       created_at: link["created_at"],
-      updated_at: link["updated_at"]
+      updated_at: link["updated_at"],
+      # Добавляем виртуальное поле для отображения короткой ссылки
+      short_link: "/r/#{URI.encode(name)}"
     }
   end
 
   # Преобразование ошибки в changeset с ошибкой
   defp changeset_with_error(changeset, error) do
-    Ecto.Changeset.add_error(changeset, :base, "Database error: #{inspect(error)}")
+    case error do
+      {:error, :name_already_exists} ->
+        Ecto.Changeset.add_error(changeset, :name, "уже существует. Пожалуйста, выберите другое имя.")
+      {:error, :name_required} ->
+        Ecto.Changeset.add_error(changeset, :name, "обязательно для заполнения")
+      {:error, reason} ->
+        Ecto.Changeset.add_error(changeset, :base, "Database error: #{inspect(reason)}")
+      _ ->
+        Ecto.Changeset.add_error(changeset, :base, "Database error: #{inspect(error)}")
+    end
   end
 
   # Применение фильтров

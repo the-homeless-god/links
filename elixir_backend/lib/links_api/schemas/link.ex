@@ -14,6 +14,8 @@ defmodule LinksApi.Schemas.Link do
     field :group_id, :string
     field :created_at, :utc_datetime
     field :updated_at, :utc_datetime
+    # Виртуальное поле для отображения короткой ссылки
+    field :short_link, :string, virtual: true
   end
 
   def changeset(link, attrs) do

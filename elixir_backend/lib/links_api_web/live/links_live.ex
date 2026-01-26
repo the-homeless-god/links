@@ -82,7 +82,7 @@ defmodule LinksApiWeb.LinksLive do
       },
       short_link: %{
         module: Backpex.Fields.Text,
-        label: "ID для короткой ссылки (формат: /r/{id})",
+        label: "Короткая ссылка (формат: /r/{name})",
         only: [:index, :show]
       }
     ]
@@ -95,24 +95,33 @@ defmodule LinksApiWeb.LinksLive do
 
   @impl Backpex.LiveResource
   def filters do
-    [
-      group_id: %{
-        module: Backpex.Filter.Select,
-        label: "Группа",
-        options: fn _socket ->
-          [
-            {"Все", ""},
-            {"dev", "dev"},
-            {"prod", "prod"},
-            {"personal", "personal"}
-          ]
-        end
-      },
-      created_at: %{
-        module: Backpex.Filter.DateRange,
-        label: "Дата создания"
-      }
-    ]
+    # ВРЕМЕННО отключаем фильтры из-за проблемы с Backpex.Filter.Select.can?/1
+    # Можно включить обратно после обновления Backpex или исправления проблемы
+    []
+  end
+
+  @impl Backpex.LiveResource
+  def filters(_assigns) do
+    # Переопределяем filters/1, чтобы гарантировать, что он тоже возвращает пустой список
+    []
+    # [
+    #   group_id: %{
+    #     module: Backpex.Filter.Select,
+    #     label: "Группа",
+    #     options: fn _socket ->
+    #       [
+    #         {"Все", ""},
+    #         {"dev", "dev"},
+    #         {"prod", "prod"},
+    #         {"personal", "personal"}
+    #       ]
+    #     end
+    #   },
+    #   created_at: %{
+    #     module: Backpex.Filter.DateRange,
+    #     label: "Дата создания"
+    #   }
+    # ]
   end
 
   @impl Backpex.LiveResource
@@ -122,7 +131,8 @@ defmodule LinksApiWeb.LinksLive do
         module: Backpex.Action.Link,
         label: "Открыть ссылку",
         icon: :external_link,
-        to: "/r/#{resource.id}",
+        # Используем name вместо id для короткой ссылки
+        to: "/r/#{URI.encode(resource.name || resource.id)}",
         target: "_blank"
       ]
     ]

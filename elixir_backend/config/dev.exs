@@ -4,9 +4,13 @@ import Config
 config :links_api, LinksApiWeb.Endpoint,
   # Режим отладки для разработки
   debug_errors: true,
-  code_reloader: true,
+  # ВРЕМЕННО отключаем code_reloader, чтобы проверить, не он ли вызывает перезагрузку
+  code_reloader: false,
+  # Отключаем check_origin для WebSocket - это важно для LiveView
   check_origin: false,
   watchers: [],
+  # ПОЛНОСТЬЮ отключаем Live Reload, чтобы избежать проблем с перезагрузкой
+  live_reload: false,
   http: [
     # Хост и порт для API
     ip: {0, 0, 0, 0},
@@ -18,11 +22,25 @@ config :links_api, LinksApiWeb.Endpoint,
 # Указываем, что хотим использовать SQLite репозиторий вместо Cassandra
 config :links_api, :repo_module, LinksApi.SqliteRepo
 
-# Уровень логгирования
-config :logger, :console, level: :info
-
-# Отключаем логи в Logstash для локальной разработки
+# ПЕРЕОПРЕДЕЛЯЕМ backends для dev - только консоль, чтобы логи точно выводились
+# Это переопределяет настройки из config.exs
 config :logger, backends: [:console]
+
+# Уровень логгирования - включаем debug для диагностики
+config :logger, :console,
+  level: :debug,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id, :method, :request_path]
+
+# Включаем логирование всех запросов Phoenix
+config :phoenix, :logger, true
+
+# Включаем логирование LiveView событий
+config :phoenix, :live_view,
+  debug_heex_annotations: true,
+  log: :debug,
+  # Добавляем таймауты для предотвращения утечек памяти
+  hibernate_after: 15_000
 
 # Разрешаем корс для разработки - добавляем все возможные источники
 config :links_api, cors_origins: ["*"]

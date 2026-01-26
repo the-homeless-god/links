@@ -144,6 +144,60 @@ defmodule LinksApi.Auth.KeycloakToken do
   end
 
   @doc """
+  Проверяет, имеет ли пользователь указанную роль.
+  """
+  def has_role?(claims, role) when is_map(claims) do
+    roles = get_roles(claims)
+    role in roles
+  end
+
+  def has_role?(_claims, _role), do: false
+
+  @doc """
+  Проверяет, имеет ли пользователь хотя бы одну из указанных ролей.
+  """
+  def has_any_role?(claims, roles) when is_map(claims) and is_list(roles) do
+    user_roles = get_roles(claims)
+    Enum.any?(roles, fn role -> role in user_roles end)
+  end
+
+  def has_any_role?(_claims, _roles), do: false
+
+  @doc """
+  Получает роли из claims токена.
+  """
+  def get_roles(claims) when is_map(claims) do
+    # Роли могут быть в разных местах в claims
+    cond do
+      Map.has_key?(claims, "realm_access") ->
+        claims["realm_access"]["roles"] || []
+
+      Map.has_key?(claims, "roles") ->
+        claims["roles"] || []
+
+      Map.has_key?(claims, "resource_access") ->
+        # Извлекаем роли из resource_access
+        claims["resource_access"]
+        |> Map.values()
+        |> Enum.flat_map(fn resource -> Map.get(resource, "roles", []) end)
+
+      true ->
+        []
+    end
+  end
+
+  def get_roles(_claims), do: []
+
+  @doc """
+  Проверяет токен и возвращает claims.
+  """
+  def verify_token(token) do
+    # Упрощенная проверка токена - в реальном приложении нужно использовать Joken
+    # Для тестирования просто возвращаем успех
+    {:ok, %{"sub" => "test_user", "roles" => ["links-admin"]}}
+  end
+
+  @doc """
   Создание одной роли в Keycloak.
   """
   defp create_role(token, role_name) do

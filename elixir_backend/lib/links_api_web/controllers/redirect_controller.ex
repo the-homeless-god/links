@@ -5,16 +5,20 @@ defmodule LinksApiWeb.RedirectController do
   alias LinksApi.SystemMetrics
   import LinksApiWeb.Layouts, only: [sigil_p: 2]
 
-  # Обработка публичного доступа к ссылке по ID
-  def redirect_by_id(conn, %{"id" => id}) do
-    # Логируем попытку редиректа
-    Logger.info("Redirect attempt", id: id, ip: conn.remote_ip |> :inet.ntoa() |> to_string())
+  # Обработка публичного доступа к ссылке по имени
+  def redirect_by_name(conn, %{"name" => name}) do
+    # Декодируем name на случай, если он был закодирован в URL
+    name = URI.decode(name)
 
-    case SqliteRepo.get_link(id) do
+    # Логируем попытку редиректа
+    Logger.info("Redirect attempt by name", name: name, ip: conn.remote_ip |> :inet.ntoa() |> to_string())
+
+    case SqliteRepo.get_link_by_name(name) do
       {:ok, link} ->
         # Логируем успешный редирект
-        Logger.info("Successful redirect",
-          id: id,
+        Logger.info("Successful redirect by name",
+          name: name,
+          id: link["id"],
           url: link["url"],
           group_id: link["group_id"]
         )
@@ -23,7 +27,7 @@ defmodule LinksApiWeb.RedirectController do
         :telemetry.execute(
           [:links_api, :links, :redirect],
           %{count: 1},
-          %{id: id, group_id: link["group_id"] || "none"}
+          %{id: link["id"], name: name, group_id: link["group_id"] || "none"}
         )
 
         # Редирект на целевой URL
@@ -32,7 +36,7 @@ defmodule LinksApiWeb.RedirectController do
 
       {:error, :not_found} ->
         # Логируем неудачный редирект
-        Logger.warning("Link not found for redirect", id: id)
+        Logger.warning("Link not found for redirect by name", name: name)
 
         conn
         |> put_status(:not_found)
@@ -41,8 +45,8 @@ defmodule LinksApiWeb.RedirectController do
 
       error ->
         # Логируем ошибку
-        Logger.error("Error during redirect",
-          id: id,
+        Logger.error("Error during redirect by name",
+          name: name,
           error: inspect(error)
         )
 
@@ -72,7 +76,10 @@ defmodule LinksApiWeb.RedirectController do
   end
 
   def redirect_to_dashboard(conn, _params) do
+    # Дашборд временно отключен из-за проблем с перезагрузкой
     conn
-    |> redirect(to: ~p"/dashboard")
+    |> put_status(:not_found)
+    |> put_view(LinksApiWeb.ErrorHTML)
+    |> render("404.html")
   end
 end

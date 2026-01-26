@@ -43,35 +43,106 @@ defmodule LinksApi.SqliteRepo do
     """
     :ok = Exqlite.Sqlite3.execute(conn, create_index_query)
 
+    # Удаляем старый уникальный индекс, если он существует (на случай если он был создан с ошибкой)
+    drop_old_index_query = """
+    DROP INDEX IF EXISTS links_name_unique_idx;
+    """
+    case Exqlite.Sqlite3.execute(conn, drop_old_index_query) do
+      :ok -> :ok
+      {:error, _} -> :ok  # Игнорируем ошибки
+    end
+
+    # Обрабатываем дубликаты имен перед созданием уникального индекса
+    # Оставляем первую запись с каждым именем (по rowid), остальные переименовываем
+    cleanup_duplicates_query = """
+    UPDATE links
+    SET name = name || '-' || substr(id, 1, 8)
+    WHERE rowid NOT IN (
+      SELECT MIN(rowid)
+      FROM links
+      GROUP BY name
+    )
+    AND name IN (
+      SELECT name
+      FROM links
+      GROUP BY name
+      HAVING COUNT(*) > 1
+    );
+    """
+
+    # Выполняем очистку дубликатов (может не найти дубликаты - это нормально)
+    case Exqlite.Sqlite3.execute(conn, cleanup_duplicates_query) do
+      :ok -> :ok
+      {:error, reason} ->
+        require Logger
+        Logger.debug("Очистка дубликатов: #{inspect(reason)} (может быть нормально, если дубликатов нет)")
+        :ok
+    end
+
+    # Создаем уникальный индекс по name для предотвращения дублирования
+    create_unique_index_query = """
+    CREATE UNIQUE INDEX IF NOT EXISTS links_name_unique_idx ON links (name);
+    """
+
+    case Exqlite.Sqlite3.execute(conn, create_unique_index_query) do
+      :ok -> :ok
+      {:error, reason} ->
+        # Если все еще есть дубликаты, логируем и продолжаем без уникального индекса
+        require Logger
+        Logger.warning("Не удалось создать уникальный индекс на name: #{inspect(reason)}. " <>
+                      "В базе данных могут быть дубликаты имен.")
+        :ok
+    end
+
     {:ok, %{conn: conn}}
   end
 
   # API для создания новой ссылки
   @impl true
   def create_link(link_params) do
-    now = DateTime.utc_now() |> DateTime.to_iso8601()
-    link = Map.merge(link_params, %{
-      "created_at" => now,
-      "updated_at" => now
-    })
+    # Проверяем уникальность name перед созданием
+    if link_params["name"] do
+      case get_link_by_name(link_params["name"]) do
+        {:ok, _existing_link} ->
+          {:error, :name_already_exists}
+        {:error, :not_found} ->
+          # name уникален, продолжаем создание
+          now = DateTime.utc_now() |> DateTime.to_iso8601()
+          link = Map.merge(link_params, %{
+            "created_at" => now,
+            "updated_at" => now
+          })
 
-    query = """
-    INSERT INTO links (id, name, url, description, group_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """
+          query = """
+          INSERT INTO links (id, name, url, description, group_id, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          """
 
-    params = [
-      link["id"],
-      link["name"],
-      link["url"],
-      link["description"] || "",
-      link["group_id"] || "",
-      link["created_at"],
-      link["updated_at"]
-    ]
+          params = [
+            link["id"],
+            link["name"],
+            link["url"],
+            link["description"] || "",
+            link["group_id"] || "",
+            link["created_at"],
+            link["updated_at"]
+          ]
 
-    GenServer.call(__MODULE__, {:execute, query, params})
-    {:ok, link}
+          case GenServer.call(__MODULE__, {:execute, query, params}) do
+            {:ok, _} -> {:ok, link}
+            {:error, reason} when is_binary(reason) ->
+              if String.contains?(reason, "UNIQUE constraint") do
+                {:error, :name_already_exists}
+              else
+                {:error, reason}
+              end
+            error -> error
+          end
+        error -> error
+      end
+    else
+      {:error, :name_required}
+    end
   end
 
   # API для обновления ссылки
@@ -80,30 +151,56 @@ defmodule LinksApi.SqliteRepo do
     # Получаем существующую ссылку
     case get_link(id) do
       {:ok, existing_link} ->
-        # Обновляем только указанные поля
-        updated_link = Map.merge(existing_link, link_params)
-        updated_link = Map.put(updated_link, "updated_at", DateTime.utc_now() |> DateTime.to_iso8601())
-
-        query = """
-        UPDATE links
-        SET name = ?, url = ?, description = ?, group_id = ?, updated_at = ?
-        WHERE id = ?
-        """
-
-        params = [
-          updated_link["name"],
-          updated_link["url"],
-          updated_link["description"] || "",
-          updated_link["group_id"] || "",
-          updated_link["updated_at"],
-          id
-        ]
-
-        GenServer.call(__MODULE__, {:execute, query, params})
-        {:ok, updated_link}
+        # Проверяем уникальность name, если он изменяется
+        if link_params["name"] && link_params["name"] != existing_link["name"] do
+          case get_link_by_name(link_params["name"]) do
+            {:ok, _existing_link} ->
+              {:error, :name_already_exists}
+            {:error, :not_found} ->
+              # name уникален, продолжаем обновление
+              update_link_internal(id, existing_link, link_params)
+            error -> error
+          end
+        else
+          # name не изменяется или не указан, продолжаем обновление
+          update_link_internal(id, existing_link, link_params)
+        end
 
       error ->
         error
+    end
+  end
+
+  # Внутренняя функция для обновления ссылки
+  defp update_link_internal(id, existing_link, link_params) do
+    # Обновляем только указанные поля
+    updated_link = Map.merge(existing_link, link_params)
+    updated_link = Map.put(updated_link, "updated_at", DateTime.utc_now() |> DateTime.to_iso8601())
+
+    query = """
+    UPDATE links
+    SET name = ?, url = ?, description = ?, group_id = ?, updated_at = ?
+    WHERE id = ?
+    """
+
+    params = [
+      updated_link["name"],
+      updated_link["url"],
+      updated_link["description"] || "",
+      updated_link["group_id"] || "",
+      updated_link["updated_at"],
+      id
+    ]
+
+    case GenServer.call(__MODULE__, {:execute, query, params}) do
+      {:ok, _} -> {:ok, updated_link}
+      {:error, reason} when is_binary(reason) ->
+        if String.contains?(reason, "UNIQUE constraint") do
+          {:error, :name_already_exists}
+        else
+          {:error, reason}
+        end
+      error -> error
     end
   end
 
@@ -112,6 +209,18 @@ defmodule LinksApi.SqliteRepo do
   def get_link(id) do
     query = "SELECT * FROM links WHERE id = ?"
     params = [id]
+
+    case GenServer.call(__MODULE__, {:query, query, params}) do
+      {:ok, []} -> {:error, :not_found}
+      {:ok, [row]} -> {:ok, row_to_map(row)}
+      error -> error
+    end
+  end
+
+  # API для получения ссылки по name (для коротких ссылок)
+  def get_link_by_name(name) do
+    query = "SELECT * FROM links WHERE name = ? LIMIT 1"
+    params = [name]
 
     case GenServer.call(__MODULE__, {:query, query, params}) do
       {:ok, []} -> {:error, :not_found}

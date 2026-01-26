@@ -24,7 +24,8 @@ defmodule LinksApi.MixProject do
   def application do
     [
       mod: {LinksApi.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      # Добавляем :os_mon для LiveDashboard (требуется для некоторых страниц)
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
@@ -40,7 +41,7 @@ defmodule LinksApi.MixProject do
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
       {:phoenix_live_dashboard, "~> 0.8.0"},
-      {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
+      {:esbuild, "~> 0.7"},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},

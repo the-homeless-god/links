@@ -10,7 +10,7 @@ defmodule LinksApi.SetupCassandra do
     Logger.info("Настройка Cassandra...")
 
     # Параметры подключения к Cassandra
-    nodes = Application.get_env(:links_api, LinksApi.Repo)[:nodes] || ["localhost:9042"]
+    nodes = ["127.0.0.1:9042"]
 
     with {:ok, conn} <- connect(nodes) do
       # Создаем keyspace, если его еще нет

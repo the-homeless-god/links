@@ -29,6 +29,6 @@ defmodule LinksApiWeb.LiveSessionGuard do
         })
       end
 
-    {:cont, socket}
+    {:cont, :nil}
   end
 end

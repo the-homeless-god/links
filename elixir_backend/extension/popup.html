@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Links Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🔗 Links Manager</h1>
+      <div class="header-actions">
+        <button id="reloadBtn" class="btn btn-secondary" title="Обновить список">🔄</button>
+        <button id="addLinkBtn" class="btn btn-primary">+ Новая ссылка</button>
+      </div>
+    </header>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Поиск ссылок..." />
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="links">Ссылки</button>
+      <button class="tab" data-tab="export">Экспорт</button>
+      <button class="tab" data-tab="import">Импорт</button>
+    </div>
+    
+    <div class="filter-tabs" id="filterTabs" style="display: none;">
+      <button class="filter-tab active" data-filter="all">Все</button>
+      <button class="filter-tab" data-filter="dev">Dev</button>
+      <button class="filter-tab" data-filter="prod">Prod</button>
+      <button class="filter-tab" data-filter="personal">Personal</button>
+    </div>
+
+    <div id="linksList" class="links-list">
+      <div class="loading">Загрузка...</div>
+    </div>
+    
+    <div id="exportContent" class="tab-content" style="display: none;">
+      <div class="export-section">
+        <h3>Экспорт ссылок</h3>
+        <p>Экспортируйте все ваши ссылки в формате base64 для бэкапа или переноса.</p>
+        <button id="exportBtn" class="btn btn-primary">📥 Экспортировать ссылки</button>
+        <div id="exportResult" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+    
+    <div id="importContent" class="tab-content" style="display: none;">
+      <div class="import-section">
+        <h3>Импорт ссылок</h3>
+        <p>Вставьте base64 строку для импорта ссылок.</p>
+        <textarea id="importData" rows="8" placeholder="Вставьте base64 строку здесь..."></textarea>
+        <button id="importBtn" class="btn btn-primary" style="margin-top: 10px;">📤 Импортировать ссылки</button>
+        <div id="importResult" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+
+    <div id="settings" class="settings">
+      <label>
+        API URL:
+        <input type="text" id="apiUrl" value="http://localhost:4000" />
+      </label>
+      <button id="saveSettingsBtn" class="btn btn-secondary">Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Модальное окно для добавления/редактирования ссылки -->
+  <div id="linkModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="modalTitle">Новая ссылка</h2>
+      <form id="linkForm">
+        <div class="form-group">
+          <label for="linkName">Название (уникальное):</label>
+          <input type="text" id="linkName" name="name" required placeholder="my-link" />
+        </div>
+        <div class="form-group">
+          <label for="linkUrl">URL:</label>
+          <input type="url" id="linkUrl" name="url" required placeholder="https://example.com" />
+        </div>
+        <div class="form-group">
+          <label for="linkDescription">Описание:</label>
+          <textarea id="linkDescription" name="description" rows="3" placeholder="Описание ссылки"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="linkGroup">Группа:</label>
+          <select id="linkGroup" name="group">
+            <option value="">Без группы</option>
+            <option value="dev">Dev</option>
+            <option value="prod">Prod</option>
+            <option value="personal">Personal</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

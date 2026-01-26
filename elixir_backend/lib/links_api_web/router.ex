@@ -2,18 +2,10 @@ defmodule LinksApiWeb.Router do
   use Phoenix.Router
   import Plug.Conn
   import Phoenix.Controller
-  import Phoenix.LiveView.Router
-  import Backpex.Router
 
+  # Упрощенный pipeline для редиректов (только для /r/:name)
   pipeline :browser do
     plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, html: {LinksApiWeb.Layouts, :root}
-    # Временно отключаем для отладки
-    # plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug Backpex.ThemeSelectorPlug
   end
 
   pipeline :api do
@@ -29,8 +21,8 @@ defmodule LinksApiWeb.Router do
   scope "/", LinksApiWeb do
     pipe_through :browser
 
-    # Маршрут для редиректа на публичную ссылку
-    get "/r/:id", RedirectController, :redirect_by_id
+    # Маршрут для редиректа на публичную ссылку по имени
+    get "/r/:name", RedirectController, :redirect_by_name
   end
 
   # Публичные API маршруты (без аутентификации)
@@ -38,11 +30,6 @@ defmodule LinksApiWeb.Router do
     pipe_through :api
 
     get "/health", HealthController, :health
-
-    # Перенаправления для неправильных маршрутов
-    get "/admin", RedirectController, :redirect_to_admin
-    get "/admin/*path", RedirectController, :redirect_to_admin_path
-    get "/dashboard", RedirectController, :redirect_to_dashboard
   end
 
   # API маршруты с аутентификацией
@@ -60,32 +47,19 @@ defmodule LinksApiWeb.Router do
     get "/groups/:group_id/links", LinkController, :by_group
   end
 
-  # Маршруты для админки
-  scope "/admin", LinksApiWeb do
-    pipe_through :browser
+  # Веб-интерфейс отключен - используем только Chrome extension
+  # Админка через Backpex больше не используется
 
-    # Перенаправляем корневой маршрут на страницу со ссылками
-    get "/", RedirectController, :admin_redirect
-
-    # Добавляем конкретный маршрут для создания ссылок через POST
-    post "/links/new", AdminLinkController, :create
-
-    # Используем LiveSession с Backpex.InitAssigns
-    live_session :default, on_mount: Backpex.InitAssigns do
-      live_resources "/links", LinksLive
-    end
-
-    # Добавляем служебные маршруты Backpex (для cookies и т.д.)
-    backpex_routes()
-  end
-
-  # Включаем маршруты LiveDashboard в разработке
-  if Mix.env() in [:dev, :test] do
-    import Phoenix.LiveDashboard.Router
-
-    scope "/" do
-      pipe_through [:browser]
-      live_dashboard "/dashboard", metrics: LinksApiWeb.Telemetry
-    end
-  end
+  # ВРЕМЕННО отключаем LiveDashboard - он вызывает постоянные проблемы с перезагрузкой
+  # Если нужен мониторинг, можно использовать альтернативы или включить обратно после исправления проблем
+  # if Mix.env() in [:dev, :test] do
+  #   import Phoenix.LiveDashboard.Router
+  #
+  #   scope "/" do
+  #     pipe_through [:dashboard]
+  #     live_dashboard "/dashboard",
+  #       metrics: nil,
+  #       ecto_repos: []
+  #   end
+  # end
 end
