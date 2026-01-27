@@ -59,7 +59,7 @@ defmodule LinksApiWeb.PublicLinkControllerTest do
     end
 
     test "handles URL-encoded names" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-123"))
+      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "name", "test-link-123"))
 
       encoded_name = URI.encode("test-link-123")
       conn = Plug.Test.conn(:get, "/u/#{encoded_name}")
