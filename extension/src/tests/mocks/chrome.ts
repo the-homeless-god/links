@@ -65,7 +65,9 @@ const createMockRuntime = (): {
   sendMessage: Mock<(_message: unknown) => Promise<void>>;
   onMessage: { addListener: Mock };
 } => ({
-  sendMessage: jest.fn((_message: unknown) => Promise.resolve()) as unknown as Mock<(_message: unknown) => Promise<void>>,
+  sendMessage: jest.fn((_message: unknown) => Promise.resolve()) as unknown as Mock<
+    (_message: unknown) => Promise<void>
+  >,
   onMessage: {
     addListener: jest.fn() as unknown as Mock,
   },
@@ -75,8 +77,12 @@ const createMockTabs = (): {
   query: Mock<() => Promise<Array<{ id: number; url: string; title: string }>>>;
   create: Mock<() => Promise<{ id: number }>>;
 } => ({
-  query: jest.fn(() => Promise.resolve([{ id: 1, url: 'https://example.com', title: 'Test' }])) as unknown as Mock<() => Promise<Array<{ id: number; url: string; title: string }>>>,
-  create: jest.fn(() => Promise.resolve({ id: 1 })) as unknown as Mock<() => Promise<{ id: number }>>,
+  query: jest.fn(() =>
+    Promise.resolve([{ id: 1, url: 'https://example.com', title: 'Test' }])
+  ) as unknown as Mock<() => Promise<Array<{ id: number; url: string; title: string }>>>,
+  create: jest.fn(() => Promise.resolve({ id: 1 })) as unknown as Mock<
+    () => Promise<{ id: number }>
+  >,
 });
 
 const createMockAction = (): {
