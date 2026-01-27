@@ -53,7 +53,7 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
       # Создаем приватную ссылку с тем же именем (но это невозможно из-за уникальности name)
       # Вместо этого создадим приватную ссылку с другим именем
-      {:ok, _private_link} = SqliteRepo.create_link(Map.put(@private_link_params, "name" => "different-name"))
+      {:ok, _private_link} = SqliteRepo.create_link(Map.put(@private_link_params, "name", "different-name"))
 
       # Публичная ссылка должна быть найдена
       assert {:ok, link} = SqliteRepo.get_public_link_by_name(@public_link_params["name"])

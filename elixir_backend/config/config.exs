@@ -62,16 +62,13 @@ config :links_api, LinksApi.Auth.KeycloakToken,
   client_id: "elixir-backend"
 
 # Конфигурация LiveView
-config :links_api, :phoenix_live_view,
-  layout: {LinksApiWeb.Layouts, :app}
+config :links_api, :phoenix_live_view, layout: {LinksApiWeb.Layouts, :app}
 
 # Конфигурация Floki для LiveView тестирования
-config :links_api, :floki,
-  html_parser: Floki.HTMLParser.Html5ever
+config :links_api, :floki, html_parser: Floki.HTMLParser.Html5ever
 
 # Конфигурация Telemetry для метрик
-config :links_api, LinksApiWeb.Telemetry,
-  metrics: []
+config :links_api, LinksApiWeb.Telemetry, metrics: []
 
 # Включение Prometheus метрик
 config :links_api, LinksApiWeb.Metrics,
@@ -83,7 +80,8 @@ config :links_api, LinksApiWeb.Metrics,
 config :esbuild,
   version: "0.17.11",
   default: [
-    args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

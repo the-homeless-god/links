@@ -41,6 +41,7 @@ defmodule LinksApi.Auth.KeycloakTokenTest do
           "client2" => %{"roles" => ["role3"]}
         }
       }
+
       assert KeycloakToken.has_role?(claims, "role1") == true
       assert KeycloakToken.has_role?(claims, "role2") == true
       assert KeycloakToken.has_role?(claims, "role3") == true
@@ -84,6 +85,7 @@ defmodule LinksApi.Auth.KeycloakTokenTest do
           "client2" => %{"roles" => ["role3"]}
         }
       }
+
       roles = KeycloakToken.get_roles(claims)
       assert "role1" in roles
       assert "role2" in roles
@@ -105,6 +107,7 @@ defmodule LinksApi.Auth.KeycloakTokenTest do
         "realm_access" => %{"roles" => ["realm_role"]},
         "roles" => ["field_role"]
       }
+
       assert KeycloakToken.get_roles(claims) == ["realm_role"]
     end
   end

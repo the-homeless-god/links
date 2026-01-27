@@ -35,12 +35,13 @@ defmodule LinksApi.Auth.KeycloakToken do
       {"Content-Type", "application/x-www-form-urlencoded"}
     ]
 
-    body = URI.encode_query(%{
-      "grant_type" => "password",
-      "client_id" => "admin-cli",
-      "username" => @keycloak_admin_user,
-      "password" => @keycloak_admin_password
-    })
+    body =
+      URI.encode_query(%{
+        "grant_type" => "password",
+        "client_id" => "admin-cli",
+        "username" => @keycloak_admin_user,
+        "password" => @keycloak_admin_password
+      })
 
     case HTTPoison.post(url, body, headers) do
       {:ok, %{status_code: 200, body: resp_body}} ->
@@ -48,9 +49,11 @@ defmodule LinksApi.Auth.KeycloakToken do
           {:ok, data} -> {:ok, data["access_token"]}
           error -> {:error, error}
         end
+
       {:ok, %{status_code: status, body: body}} ->
         Logger.error("Failed to get admin token: #{status} - #{body}")
         {:error, "Failed to get admin token: #{status}"}
+
       {:error, reason} ->
         Logger.error("Error connecting to Keycloak: #{inspect(reason)}")
         {:error, reason}
@@ -72,7 +75,8 @@ defmodule LinksApi.Auth.KeycloakToken do
       "realm" => @realm_name,
       "enabled" => true,
       "registrationAllowed" => true,
-      "accessTokenLifespan" => 86400, # 24 часа
+      # 24 часа
+      "accessTokenLifespan" => 86400,
       "sslRequired" => "external"
     }
 
@@ -80,9 +84,11 @@ defmodule LinksApi.Auth.KeycloakToken do
       {:ok, %{status_code: status}} when status in [201, 409] ->
         Logger.info("Realm created or already exists: #{@realm_name}")
         {:ok, :realm_created}
+
       {:ok, %{status_code: status, body: body}} ->
         Logger.error("Failed to create realm: #{status} - #{body}")
         {:error, "Failed to create realm: #{status}"}
+
       {:error, reason} ->
         Logger.error("Error connecting to Keycloak: #{inspect(reason)}")
         {:error, reason}
@@ -116,9 +122,11 @@ defmodule LinksApi.Auth.KeycloakToken do
       {:ok, %{status_code: status}} when status in [201, 409] ->
         Logger.info("Client created or already exists: #{@client_id}")
         {:ok, :client_created}
+
       {:ok, %{status_code: status, body: body}} ->
         Logger.error("Failed to create client: #{status} - #{body}")
         {:error, "Failed to create client: #{status}"}
+
       {:error, reason} ->
         Logger.error("Error connecting to Keycloak: #{inspect(reason)}")
         {:error, reason}
@@ -131,9 +139,10 @@ defmodule LinksApi.Auth.KeycloakToken do
   defp create_roles(token) do
     roles = ["admin", "user"]
 
-    results = Enum.map(roles, fn role ->
-      create_role(token, role)
-    end)
+    results =
+      Enum.map(roles, fn role ->
+        create_role(token, role)
+      end)
 
     if Enum.all?(results, fn {status, _} -> status == :ok end) do
       {:ok, :roles_created}
@@ -217,9 +226,11 @@ defmodule LinksApi.Auth.KeycloakToken do
       {:ok, %{status_code: status}} when status in [201, 409] ->
         Logger.info("Role created or already exists: #{role_name}")
         {:ok, :role_created}
+
       {:ok, %{status_code: status, body: body}} ->
         Logger.error("Failed to create role #{role_name}: #{status} - #{body}")
         {:error, "Failed to create role #{role_name}: #{status}"}
+
       {:error, reason} ->
         Logger.error("Error connecting to Keycloak: #{inspect(reason)}")
         {:error, reason}
@@ -266,8 +277,10 @@ defmodule LinksApi.Auth.JwksStrategy do
           {:ok, %{"keys" => keys}} -> {:ok, keys}
           error -> error
         end
+
       {:ok, response} ->
         {:error, {:bad_response, response}}
+
       error ->
         error
     end

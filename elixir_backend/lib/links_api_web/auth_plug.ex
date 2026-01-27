@@ -15,10 +15,12 @@ defmodule LinksApiWeb.AuthPlug do
           "guest" ->
             # Создаем guest пользователя
             guest_claims = %{"sub" => "guest", "user_id" => "guest", "preferred_username" => "guest"}
+
             conn
             |> assign(:current_user, guest_claims)
             |> assign(:user_roles, [])
             |> assign(:user_id, "guest")
+
           _ ->
             conn
             |> put_status(401)
@@ -42,10 +44,12 @@ defmodule LinksApiWeb.AuthPlug do
             case get_guest_token(conn) do
               "guest" ->
                 guest_claims = %{"sub" => "guest", "user_id" => "guest", "preferred_username" => "guest"}
+
                 conn
                 |> assign(:current_user, guest_claims)
                 |> assign(:user_roles, [])
                 |> assign(:user_id, "guest")
+
               _ ->
                 conn
                 |> put_status(401)

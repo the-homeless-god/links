@@ -43,9 +43,7 @@ describe('API Service', () => {
 
   describe('fetchLinks', () => {
     test('should fetch links successfully', async () => {
-      const mockLinks: Link[] = [
-        { id: '1', name: 'test', url: 'https://example.com' },
-      ];
+      const mockLinks: Link[] = [{ id: '1', name: 'test', url: 'https://example.com' }];
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,

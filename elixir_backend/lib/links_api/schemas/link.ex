@@ -8,16 +8,18 @@ defmodule LinksApi.Schemas.Link do
 
   @primary_key {:id, :string, autogenerate: false}
   schema "links" do
-    field :name, :string
-    field :url, :string
-    field :description, :string
-    field :group_id, :string
-    field :user_id, :string  # ID пользователя (из Keycloak или "guest")
-    field :is_public, :boolean, default: false  # Публичная ссылка, доступна всем
-    field :created_at, :utc_datetime
-    field :updated_at, :utc_datetime
+    field(:name, :string)
+    field(:url, :string)
+    field(:description, :string)
+    field(:group_id, :string)
+    # ID пользователя (из Keycloak или "guest")
+    field(:user_id, :string)
+    # Публичная ссылка, доступна всем
+    field(:is_public, :boolean, default: false)
+    field(:created_at, :utc_datetime)
+    field(:updated_at, :utc_datetime)
     # Виртуальное поле для отображения короткой ссылки
-    field :short_link, :string, virtual: true
+    field(:short_link, :string, virtual: true)
   end
 
   def changeset(link, attrs) do
@@ -39,7 +41,9 @@ defmodule LinksApi.Schemas.Link do
 
   def create_changeset(link, attrs, _params) do
     now = DateTime.utc_now()
-    attrs = attrs
+
+    attrs =
+      attrs
       |> Map.put(:created_at, now)
       |> Map.put(:updated_at, now)
       |> Map.put_new(:id, UUID.uuid4())

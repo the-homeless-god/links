@@ -64,8 +64,12 @@ defmodule LinksApi.SqliteRepoTest do
     test "returns only links for specified user" do
       # Создаем ссылки для разных пользователей
       {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
-      {:ok, _link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
-      {:ok, _link3} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-3", "user_id", @user2_id))
+
+      {:ok, _link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
+
+      {:ok, _link3} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-3") |> Map.put("user_id", @user2_id))
 
       assert {:ok, links} = SqliteRepo.get_all_links_by_user(@user1_id)
       assert length(links) == 2
@@ -82,7 +86,9 @@ defmodule LinksApi.SqliteRepoTest do
 
     test "returns guest links for guest user" do
       {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @guest_id))
-      {:ok, _link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
+
+      {:ok, _link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       assert {:ok, links} = SqliteRepo.get_all_links_by_user(@guest_id)
       assert length(links) == 1
@@ -119,7 +125,9 @@ defmodule LinksApi.SqliteRepoTest do
 
     test "returns error when trying to update with duplicate name for same user" do
       {:ok, link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
-      {:ok, link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
+
+      {:ok, link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       # Пытаемся переименовать link2 в имя link1
       update_params = %{"name" => @valid_link_params["name"]}
@@ -185,10 +193,32 @@ defmodule LinksApi.SqliteRepoTest do
   describe "get_links_by_group/1" do
     test "returns links filtered by group_id and user_id" do
       # Создаем ссылки для разных групп и пользователей
-      {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id" => @user1_id, "group_id" => "group1"))
-      {:ok, _link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id" => @user1_id, "group_id" => "group1"))
-      {:ok, _link3} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-3", "user_id" => @user1_id, "group_id" => "group2"))
-      {:ok, _link4} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-4", "user_id" => @user2_id, "group_id" => "group1"))
+      {:ok, _link1} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("user_id", @user1_id) |> Map.put("group_id", "group1"))
+
+      {:ok, _link2} =
+        SqliteRepo.create_link(
+          @valid_link_params
+          |> Map.put("name", "test-link-2")
+          |> Map.put("user_id", @user1_id)
+          |> Map.put("group_id", "group1")
+        )
+
+      {:ok, _link3} =
+        SqliteRepo.create_link(
+          @valid_link_params
+          |> Map.put("name", "test-link-3")
+          |> Map.put("user_id", @user1_id)
+          |> Map.put("group_id", "group2")
+        )
+
+      {:ok, _link4} =
+        SqliteRepo.create_link(
+          @valid_link_params
+          |> Map.put("name", "test-link-4")
+          |> Map.put("user_id", @user2_id)
+          |> Map.put("group_id", "group1")
+        )
 
       assert {:ok, links} = SqliteRepo.get_links_by_group("group1")
       # Должны вернуться все ссылки группы group1 (независимо от user_id)
@@ -205,7 +235,9 @@ defmodule LinksApi.SqliteRepoTest do
   describe "user isolation" do
     test "users cannot see each other's links" do
       {:ok, link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
-      {:ok, link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user2_id))
+
+      {:ok, link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user2_id))
 
       assert {:ok, user1_links} = SqliteRepo.get_all_links_by_user(@user1_id)
       assert {:ok, user2_links} = SqliteRepo.get_all_links_by_user(@user2_id)
@@ -218,7 +250,9 @@ defmodule LinksApi.SqliteRepoTest do
 
     test "guest users are isolated from regular users" do
       {:ok, _guest_link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @guest_id))
-      {:ok, _user_link} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
+
+      {:ok, _user_link} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       assert {:ok, guest_links} = SqliteRepo.get_all_links_by_user(@guest_id)
       assert {:ok, user_links} = SqliteRepo.get_all_links_by_user(@user1_id)

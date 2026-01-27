@@ -17,7 +17,7 @@ defmodule LinksApi.Application do
       repo_module,
 
       # Запуск Pubsub для LiveView
-      {Phoenix.PubSub, name: LinksApi.PubSub},
+      {Phoenix.PubSub, name: LinksApi.PubSub}
 
       # Запуск :os_mon для LiveDashboard (если доступен)
       # Это требуется для некоторых страниц дашборда
@@ -64,9 +64,11 @@ defmodule LinksApi.Application do
         :timer.sleep(30_000)
 
         Logger.info("Начало настройки Keycloak...")
+
         case LinksApi.Auth.KeycloakToken.setup_realm() do
           :ok ->
             Logger.info("Настройка Keycloak успешно завершена")
+
           {:error, reason} ->
             Logger.error("Ошибка при настройке Keycloak: #{inspect(reason)}")
         end
@@ -106,11 +108,12 @@ defmodule LinksApi.Application do
   # Обработчик Telemetry событий для логирования
   defp handle_telemetry_event(event, measurements, metadata, _config) do
     # Логируем все события LiveView, особенно ошибки
-    is_dashboard = String.contains?(inspect(metadata), "dashboard") or
-                   (Map.has_key?(metadata, :request_path) and
-                    String.starts_with?(metadata[:request_path] || "", "/dashboard")) or
-                   (Map.has_key?(metadata, :view) and
-                    String.contains?(inspect(metadata[:view]), "Dashboard"))
+    is_dashboard =
+      String.contains?(inspect(metadata), "dashboard") or
+        (Map.has_key?(metadata, :request_path) and
+           String.starts_with?(metadata[:request_path] || "", "/dashboard")) or
+        (Map.has_key?(metadata, :view) and
+           String.contains?(inspect(metadata[:view]), "Dashboard"))
 
     if is_dashboard or event == [:phoenix, :live_view, :error] do
       level = if event == [:phoenix, :live_view, :error], do: :error, else: :debug
@@ -133,17 +136,11 @@ defmodule LinksApi.Application do
       {:telemetry_metrics, :counter, [:phoenix, :endpoint, :start], name: "phoenix.endpoint.start.count"},
       {:telemetry_metrics, :counter, [:phoenix, :endpoint, :stop], name: "phoenix.endpoint.stop.count"},
       {:telemetry_metrics, :summary, [:phoenix, :router_dispatch, :start],
-        name: "phoenix.router_dispatch.start.duration",
-        tags: [:route],
-        unit: {:native, :millisecond}
-      },
+       name: "phoenix.router_dispatch.start.duration", tags: [:route], unit: {:native, :millisecond}},
 
       # Метрики для базы данных
       {:telemetry_metrics, :summary, [:links_api, :repo, :query],
-        name: "links_api.repo.query.duration",
-        tags: [:query],
-        unit: {:native, :millisecond}
-      }
+       name: "links_api.repo.query.duration", tags: [:query], unit: {:native, :millisecond}}
     ]
   end
 end

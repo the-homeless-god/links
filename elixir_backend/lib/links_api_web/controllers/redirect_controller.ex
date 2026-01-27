@@ -20,8 +20,10 @@ defmodule LinksApiWeb.RedirectController do
 
         conn
         |> redirect(external: link["url"])
+
       {:error, :not_found} ->
         Logger.warning("Public link not found", name: decoded_name)
+
         conn
         |> put_status(:not_found)
         |> put_view(LinksApiWeb.ErrorHTML)
@@ -95,6 +97,7 @@ defmodule LinksApiWeb.RedirectController do
 
   def redirect_to_admin_path(conn, %{"path" => path}) do
     path_string = Enum.join(path, "/")
+
     conn
     |> redirect(to: ~p"/admin/#{path_string}")
   end

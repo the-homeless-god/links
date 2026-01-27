@@ -76,10 +76,7 @@ export const createLink = (linkData: Partial<Link>): TE.TaskEither<Error, Link> 
     )
   );
 
-export const updateLink = (
-  id: string,
-  linkData: Partial<Link>
-): TE.TaskEither<Error, Link> =>
+export const updateLink = (id: string, linkData: Partial<Link>): TE.TaskEither<Error, Link> =>
   pipe(
     TE.Do,
     TE.bind('apiUrl', () => getApiUrl()),

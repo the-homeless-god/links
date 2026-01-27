@@ -73,6 +73,7 @@ defmodule LinksApiWeb.ManualLinksLive do
     case LinksApi.SqliteRepo.get_all_links() do
       {:ok, links} ->
         {:ok, assign(socket, links: links)}
+
       _ ->
         {:ok, assign(socket, links: [])}
     end
@@ -100,6 +101,7 @@ defmodule LinksApiWeb.ManualLinksLive do
       {:ok, _} ->
         {:ok, links} = LinksApi.SqliteRepo.get_all_links()
         {:noreply, assign(socket, links: links)}
+
       _ ->
         {:noreply, socket}
     end

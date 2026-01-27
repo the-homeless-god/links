@@ -70,7 +70,8 @@ defmodule LinksApi.Integration.LinksApiTest do
       assert updated_link["id"] == link["id"]
       assert updated_link["name"] == "Updated Name"
       assert updated_link["description"] == "Updated description"
-      assert updated_link["url"] == link["url"] # Не изменилось
+      # Не изменилось
+      assert updated_link["url"] == link["url"]
 
       # Получаем ссылку и проверяем обновленные данные
       {:ok, retrieved_link} = Repo.get_link(link["id"])
