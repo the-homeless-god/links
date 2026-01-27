@@ -32,6 +32,7 @@ defmodule LinksApi.SqliteRepo do
       description TEXT,
       group_id TEXT,
       user_id TEXT,
+      is_public INTEGER DEFAULT 0,
       created_at TEXT,
       updated_at TEXT
     );
@@ -95,6 +96,36 @@ defmodule LinksApi.SqliteRepo do
         :ok
     end
 
+    # Добавляем колонку user_id если её нет (для существующих БД)
+    add_user_id_column_query = """
+    ALTER TABLE links ADD COLUMN user_id TEXT;
+    """
+    case Exqlite.Sqlite3.execute(conn, add_user_id_column_query) do
+      :ok -> :ok
+      {:error, _} -> :ok  # Колонка уже существует - это нормально
+    end
+
+    # Добавляем колонку is_public если её нет (для существующих БД)
+    add_is_public_column_query = """
+    ALTER TABLE links ADD COLUMN is_public INTEGER DEFAULT 0;
+    """
+    case Exqlite.Sqlite3.execute(conn, add_is_public_column_query) do
+      :ok -> :ok
+      {:error, _} -> :ok  # Колонка уже существует - это нормально
+    end
+
+    # Создаем индекс по user_id для фильтрации по пользователю
+    create_user_index_query = """
+    CREATE INDEX IF NOT EXISTS links_user_id_idx ON links (user_id);
+    """
+    :ok = Exqlite.Sqlite3.execute(conn, create_user_index_query)
+
+    # Создаем индекс по is_public для быстрого поиска публичных ссылок
+    create_public_index_query = """
+    CREATE INDEX IF NOT EXISTS links_is_public_idx ON links (is_public);
+    """
+    :ok = Exqlite.Sqlite3.execute(conn, create_public_index_query)
+
     {:ok, %{conn: conn}}
   end
 
@@ -115,9 +146,12 @@ defmodule LinksApi.SqliteRepo do
           })
 
           query = """
-          INSERT INTO links (id, name, url, description, group_id, user_id, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO links (id, name, url, description, group_id, user_id, is_public, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           """
+
+          # Преобразуем boolean в integer для SQLite
+          is_public = if link["is_public"] == true or link["is_public"] == 1, do: 1, else: 0
 
           params = [
             link["id"],
@@ -126,6 +160,7 @@ defmodule LinksApi.SqliteRepo do
             link["description"] || "",
             link["group_id"] || "",
             link["user_id"] || "guest",
+            is_public,
             link["created_at"],
             link["updated_at"]
           ]
@@ -181,9 +216,14 @@ defmodule LinksApi.SqliteRepo do
 
     query = """
     UPDATE links
-    SET name = ?, url = ?, description = ?, group_id = ?, user_id = ?, updated_at = ?
+    SET name = ?, url = ?, description = ?, group_id = ?, user_id = ?, is_public = ?, updated_at = ?
     WHERE id = ?
     """
+
+    # Преобразуем boolean в integer для SQLite
+    is_public = if updated_link["is_public"] == true or updated_link["is_public"] == 1, do: 1, else: 0
+    # Если is_public не указан, используем значение из существующей ссылки
+    is_public = if Map.has_key?(updated_link, "is_public"), do: is_public, else: (if existing_link["is_public"] == 1, do: 1, else: 0)
 
     params = [
       updated_link["name"],
@@ -191,6 +231,7 @@ defmodule LinksApi.SqliteRepo do
       updated_link["description"] || "",
       updated_link["group_id"] || "",
       updated_link["user_id"] || existing_link["user_id"] || "guest",
+      is_public,
       updated_link["updated_at"],
       id
     ]
@@ -254,6 +295,18 @@ defmodule LinksApi.SqliteRepo do
       {:ok, rows} ->
         links = Enum.map(rows, &row_to_map/1)
         {:ok, links}
+      error -> error
+    end
+  end
+
+  # API для получения публичной ссылки по имени (доступна всем)
+  def get_public_link_by_name(name) do
+    query = "SELECT * FROM links WHERE name = ? AND is_public = 1 LIMIT 1"
+    params = [name]
+
+    case GenServer.call(__MODULE__, {:query, query, params}) do
+      {:ok, []} -> {:error, :not_found}
+      {:ok, [row]} -> {:ok, row_to_map(row)}
       error -> error
     end
   end
@@ -346,6 +399,13 @@ defmodule LinksApi.SqliteRepo do
   defp row_to_map(row) do
     # Преобразуем ключи из атомов в строки (если нужно)
     row = Enum.map(row, fn {k, v} -> {to_string(k), v} end) |> Enum.into(%{})
+
+    # Преобразуем is_public из integer в boolean
+    row = Map.update(row, "is_public", false, fn
+      1 -> true
+      0 -> false
+      val -> val
+    end)
 
     # Преобразуем ISO8601 строки в DateTime
     row = if row["created_at"] do
