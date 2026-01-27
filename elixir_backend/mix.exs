@@ -10,12 +10,22 @@ defmodule LinksApi.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: releases(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test
+      ]
+    ]
+  end
+
+  defp releases do
+    [
+      links_api: [
+        include_executables_for: [:unix, :windows],
+        steps: [:assemble, :tar]
       ]
     ]
   end
