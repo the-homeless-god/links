@@ -129,16 +129,22 @@ defmodule LinksApi.RepoAdapter do
   # Преобразование данных из репозитория в схему Ecto
   defp to_schema(link) when is_map(link) do
     name = link["name"] || link["id"]
+    is_public = link["is_public"] == true || link["is_public"] == 1
+    # Публичные ссылки используют /u/, обычные - /r/
+    short_link = if is_public, do: "/u/#{URI.encode(name)}", else: "/r/#{URI.encode(name)}"
+
     %Link{
       id: link["id"],
       name: link["name"],
       url: link["url"],
       description: link["description"],
       group_id: link["group_id"],
+      user_id: link["user_id"],
+      is_public: is_public,
       created_at: link["created_at"],
       updated_at: link["updated_at"],
       # Добавляем виртуальное поле для отображения короткой ссылки
-      short_link: "/r/#{URI.encode(name)}"
+      short_link: short_link
     }
   end
 

@@ -93,6 +93,15 @@
             <option value="personal">Personal</option>
           </select>
         </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="linkIsPublic" name="is_public" />
+            <span>🌐 Публичная ссылка (доступна всем по /u/:name)</span>
+          </label>
+          <small style="color: #666; font-size: 12px; margin-left: 24px;">
+            Публичные ссылки можно делиться с кем угодно без авторизации
+          </small>
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Сохранить</button>
           <button type="button" class="btn btn-secondary" id="cancelBtn">Отмена</button>

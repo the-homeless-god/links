@@ -2,10 +2,34 @@ defmodule LinksApiWeb.RedirectController do
   use Phoenix.Controller
   require Logger
   alias LinksApi.SqliteRepo
-  alias LinksApi.SystemMetrics
   import LinksApiWeb.Layouts, only: [sigil_p: 2]
 
-  # Обработка публичного доступа к ссылке по имени
+  # Редирект на публичную ссылку (доступна всем, не требует авторизации)
+  def redirect_public_by_name(conn, %{"name" => name}) do
+    decoded_name = URI.decode(name)
+
+    case SqliteRepo.get_public_link_by_name(decoded_name) do
+      {:ok, link} ->
+        Logger.info("Public redirect by name", name: decoded_name, id: link["id"], url: link["url"])
+
+        :telemetry.execute(
+          [:links_api, :links, :public_redirect],
+          %{count: 1},
+          %{id: link["id"], name: decoded_name}
+        )
+
+        conn
+        |> redirect(external: link["url"])
+      {:error, :not_found} ->
+        Logger.warning("Public link not found", name: decoded_name)
+        conn
+        |> put_status(:not_found)
+        |> put_view(LinksApiWeb.ErrorHTML)
+        |> render("404.html")
+    end
+  end
+
+  # Редирект на обычную ссылку (требует авторизации, только для владельца)
   def redirect_by_name(conn, %{"name" => name}) do
     # Декодируем name на случай, если он был закодирован в URL
     name = URI.decode(name)

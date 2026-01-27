@@ -149,12 +149,15 @@ function renderLinks() {
   container.innerHTML = filtered.map(link => {
     const linkId = escapeHtml(link.id || '');
     const linkName = escapeHtml(link.name || '');
+    const isPublic = link.is_public === true || link.is_public === 1;
+    const publicBadge = isPublic ? '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">🌐 Публичная</span>' : '';
+    const shortLink = isPublic ? `/u/${encodeURIComponent(linkName)}` : `/r/${encodeURIComponent(linkName)}`;
     return `
     <div class="link-item" data-link-id="${linkId}">
       <div class="link-header">
         <div>
-          <div class="link-name">${linkName || 'Без названия'}</div>
-          <div class="link-short">/r/${linkName}</div>
+          <div class="link-name">${linkName || 'Без названия'}${publicBadge}</div>
+          <div class="link-short">${shortLink}</div>
         </div>
         ${link.group_id ? `<span class="link-group">${escapeHtml(link.group_id)}</span>` : ''}
       </div>
@@ -195,8 +198,9 @@ async function openLink(name) {
 }
 
 // Копирование короткой ссылки в буфер обмена
-async function copyShortLink(name) {
-  const shortUrl = `${API_URL}/r/${name}`;
+async function copyShortLink(name, isPublic = false) {
+  const prefix = isPublic ? '/u/' : '/r/';
+  const shortUrl = `${API_URL}${prefix}${encodeURIComponent(name)}`;
   try {
     await navigator.clipboard.writeText(shortUrl);
     showMessage('Короткая ссылка скопирована!', 'success');
@@ -254,6 +258,7 @@ async function editLink(id) {
   document.getElementById('linkUrl').value = link.url || '';
   document.getElementById('linkDescription').value = link.description || '';
   document.getElementById('linkGroup').value = link.group_id || '';
+  document.getElementById('linkIsPublic').checked = link.is_public === true || link.is_public === 1;
   document.getElementById('linkModal').style.display = 'block';
 }
 
@@ -304,11 +309,14 @@ async function saveLink(formData) {
   const descriptionValue = formData.get('description') || document.getElementById('linkDescription').value || '';
   const groupValue = formData.get('group') || document.getElementById('linkGroup').value || '';
   
+  const isPublicValue = document.getElementById('linkIsPublic').checked;
+  
   const linkData = {
     name: nameValue.trim(),
     url: urlValue.trim(),
     description: descriptionValue.trim(),
-    group_id: groupValue
+    group_id: groupValue,
+    is_public: isPublicValue
   };
 
   // Валидация на клиенте
@@ -580,7 +588,8 @@ function setupActionButtons() {
     if (action === 'open' && linkName) {
       await openLink(linkName);
     } else if (action === 'copy-short' && linkName) {
-      await copyShortLink(linkName);
+      const isPublic = e.target.getAttribute('data-is-public') === 'true';
+      await copyShortLink(linkName, isPublic);
     } else if (action === 'copy-url' && linkUrl) {
       await copyUrl(linkUrl);
     } else if (action === 'edit' && linkId) {

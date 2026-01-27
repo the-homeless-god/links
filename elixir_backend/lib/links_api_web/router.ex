@@ -21,7 +21,9 @@ defmodule LinksApiWeb.Router do
   scope "/", LinksApiWeb do
     pipe_through :browser
 
-    # Маршрут для редиректа на публичную ссылку по имени
+    # Маршрут для редиректа на публичную ссылку по имени (доступна всем)
+    get "/u/:name", RedirectController, :redirect_public_by_name
+    # Маршрут для редиректа на обычную ссылку по имени (требует авторизации)
     get "/r/:name", RedirectController, :redirect_by_name
   end
 
