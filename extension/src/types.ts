@@ -39,3 +39,6 @@ export type MessageType = 'createLinkFromPage';
 export interface Message {
   action: MessageType;
 }
+
+// Re-export FilterType from config
+export type { FilterType } from '@/config';
