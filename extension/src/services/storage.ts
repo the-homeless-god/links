@@ -1,5 +1,4 @@
 import * as TE from 'fp-ts/TaskEither';
-import { pipe } from 'fp-ts/function';
 import { STORAGE_KEYS, API_URL_DEFAULT } from '@/config';
 import type { UserInfo, KeycloakConfig, AuthState } from '@/types';
 import { log } from './logger';

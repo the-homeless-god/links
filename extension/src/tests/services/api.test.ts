@@ -1,4 +1,3 @@
-import * as TE from 'fp-ts/TaskEither';
 import { fetchLinks, createLink, getAuthHeaders } from '@/services/api';
 import { chrome } from '../mocks/chrome';
 import type { Link } from '@/types';

@@ -17,7 +17,7 @@ export function formatDate(dateString: string | undefined): string {
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-  } catch (error) {
+  } catch (_error) {
     // Fallback для старых браузеров
     const textArea = document.createElement('textarea');
     textArea.value = text;
