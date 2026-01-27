@@ -1,5 +1,4 @@
 import type { UserInfo, KeycloakConfig } from '@/types';
-import { STORAGE_KEYS } from '@/config';
 import { setAuthState, getKeycloakConfig, setKeycloakConfig } from '@/services/storage';
 
 // Загрузка сохраненной конфигурации Keycloak

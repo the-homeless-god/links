@@ -688,14 +688,14 @@ async function importLinksHandler(): Promise<void> {
     let jsonString: string;
     try {
       jsonString = decodeURIComponent(escape(atob(importDataValue)));
-    } catch (e) {
+    } catch (_e) {
       throw new Error('Неверный формат base64 строки');
     }
 
     let importDataObj: { links?: Link[] };
     try {
       importDataObj = JSON.parse(jsonString);
-    } catch (e) {
+    } catch (_e) {
       throw new Error('Неверный формат JSON данных');
     }
 

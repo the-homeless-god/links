@@ -37,7 +37,13 @@ type ChromeMock = {
   };
 };
 
-export const createMockStorage = () => ({
+export const createMockStorage = (): {
+  local: {
+    get: Mock<(_keys: string[]) => Promise<{ [key: string]: unknown }>>;
+    set: Mock<(_items: { [key: string]: unknown }) => Promise<void>>;
+    remove: Mock<(_keys: string[]) => Promise<void>>;
+  };
+} => ({
   local: {
     get: jest.fn((_keys: string[]) => {
       return Promise.resolve({
@@ -55,26 +61,38 @@ export const createMockStorage = () => ({
   },
 });
 
-const createMockRuntime = () => ({
+const createMockRuntime = (): {
+  sendMessage: Mock<(_message: unknown) => Promise<void>>;
+  onMessage: { addListener: Mock };
+} => ({
   sendMessage: jest.fn((_message: unknown) => Promise.resolve()),
   onMessage: {
     addListener: jest.fn(),
   },
 });
 
-const createMockTabs = () => ({
+const createMockTabs = (): {
+  query: Mock<() => Promise<Array<{ id: number; url: string; title: string }>>>;
+  create: Mock<() => Promise<{ id: number }>>;
+} => ({
   query: jest.fn(() => Promise.resolve([{ id: 1, url: 'https://example.com', title: 'Test' }])),
   create: jest.fn(() => Promise.resolve({ id: 1 })),
 });
 
-const createMockAction = () => ({
+const createMockAction = (): {
+  openPopup: Mock;
+  onClicked: { addListener: Mock };
+} => ({
   openPopup: jest.fn(),
   onClicked: {
     addListener: jest.fn(),
   },
 });
 
-const createMockContextMenus = () => ({
+const createMockContextMenus = (): {
+  create: Mock;
+  onClicked: { addListener: Mock };
+} => ({
   create: jest.fn(),
   onClicked: {
     addListener: jest.fn(),

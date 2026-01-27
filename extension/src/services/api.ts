@@ -2,7 +2,6 @@ import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
 import type { Link, ExportData } from '@/types';
 import { getAuthState, getApiUrl } from './storage';
-import { log } from './logger';
 
 export const getAuthHeaders = (): TE.TaskEither<Error, Record<string, string>> =>
   pipe(
