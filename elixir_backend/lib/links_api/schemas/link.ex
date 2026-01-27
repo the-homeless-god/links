@@ -12,6 +12,7 @@ defmodule LinksApi.Schemas.Link do
     field :url, :string
     field :description, :string
     field :group_id, :string
+    field :user_id, :string  # ID пользователя (из Keycloak или "guest")
     field :created_at, :utc_datetime
     field :updated_at, :utc_datetime
     # Виртуальное поле для отображения короткой ссылки
@@ -20,7 +21,7 @@ defmodule LinksApi.Schemas.Link do
 
   def changeset(link, attrs) do
     link
-    |> cast(attrs, [:id, :name, :url, :description, :group_id, :created_at, :updated_at])
+    |> cast(attrs, [:id, :name, :url, :description, :group_id, :user_id, :created_at, :updated_at])
     |> validate_required([:name, :url])
     |> validate_url(:url)
   end
@@ -30,7 +31,7 @@ defmodule LinksApi.Schemas.Link do
     attrs = Map.put(attrs, :updated_at, now)
 
     link
-    |> cast(attrs, [:name, :url, :description, :group_id, :updated_at])
+    |> cast(attrs, [:name, :url, :description, :group_id, :user_id, :updated_at])
     |> validate_required([:name, :url])
     |> validate_url(:url)
   end
@@ -43,7 +44,7 @@ defmodule LinksApi.Schemas.Link do
       |> Map.put_new(:id, UUID.uuid4())
 
     link
-    |> cast(attrs, [:id, :name, :url, :description, :group_id, :created_at, :updated_at])
+    |> cast(attrs, [:id, :name, :url, :description, :group_id, :user_id, :created_at, :updated_at])
     |> validate_required([:name, :url])
     |> validate_url(:url)
   end

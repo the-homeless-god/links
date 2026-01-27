@@ -12,9 +12,9 @@ defmodule LinksApiWeb.Router do
     plug :accepts, ["json"]
   end
 
-  # Временно отключаем аутентификацию для тестирования
+  # Pipeline для аутентификации (поддерживает Keycloak и guest режим)
   pipeline :authenticated do
-    # plug LinksApiWeb.AuthPlug
+    plug LinksApiWeb.AuthPlug
   end
 
   # Маршрут для редиректа по короткой ссылке
