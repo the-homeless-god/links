@@ -1,0 +1,101 @@
+name: Build Backend
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'elixir_backend/**'
+      - '.github/workflows/backend-build.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'elixir_backend/**'
+      - '.github/workflows/backend-build.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: elixir_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16.0'
+          otp-version: '27.0'
+
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Check code formatting
+        run: mix format --check-formatted
+
+      - name: Run credo
+        run: mix credo --strict
+
+      - name: Run dialyzer
+        run: mix dialyzer
+        continue-on-error: true
+
+      - name: Run tests
+        run: mix test
+
+      - name: Run tests with coverage
+        run: mix test --cover
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./cover/excoveralls.json
+          flags: backend
+          name: backend-coverage
+        continue-on-error: true
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: elixir_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16.0'
+          otp-version: '27.0'
+
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Build release
+        run: |
+          MIX_ENV=prod mix release
+
+      - name: Create archive
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            tar -czf links-api-linux.tar.gz _build/prod/rel/links_api
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            tar -czf links-api-macos.tar.gz _build/prod/rel/links_api
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            tar -czf links-api-windows.tar.gz _build/prod/rel/links_api
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: links-api-${{ runner.os }}
+          path: elixir_backend/links-api-*.tar.gz

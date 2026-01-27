@@ -1,0 +1,86 @@
+name: Release Backend
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: elixir_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16.0'
+          otp-version: '27.0'
+
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Build release
+        run: |
+          MIX_ENV=prod mix release
+
+      - name: Create archive
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            tar -czf links-api-linux.tar.gz _build/prod/rel/links_api
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            tar -czf links-api-macos.tar.gz _build/prod/rel/links_api
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            tar -czf links-api-windows.tar.gz _build/prod/rel/links_api
+          fi
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v4
+        with:
+          files: elixir_backend/links-api-*.tar.gz
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Links API Backend ${{ steps.version.outputs.version }}
+          body: |
+            ## Links API Backend ${{ steps.version.outputs.version }}
+
+            ### Installation
+            1. Download the archive for your OS
+            2. Extract the archive
+            3. Run `./bin/links_api start` (or `bin\links_api.bat start` on Windows)
+
+            ### Running
+            The backend will start with SQLite database. The database file will be created automatically.
+
+            ### Configuration
+            Set environment variables:
+            - `PORT` - Server port (default: 4000)
+            - `DATABASE_PATH` - SQLite database path (default: priv/db/links.db)
+
+            ### Changes
+            See the full changelog in the repository.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
