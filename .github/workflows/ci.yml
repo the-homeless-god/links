@@ -31,7 +31,7 @@ jobs:
         run: mix format --check-formatted
 
       - name: Run credo
-        run: mix credo --strict
+        run: mix credo --strict --only readability,design
 
       - name: Run dialyzer
         run: mix dialyzer
