@@ -3,8 +3,9 @@ import { setAuthState, getKeycloakConfig, setKeycloakConfig } from '@/services/s
 
 // Загрузка сохраненной конфигурации Keycloak
 async function loadKeycloakConfig(): Promise<void> {
-  const config = await getKeycloakConfig();
-  if (config) {
+  const configResult = await getKeycloakConfig()();
+  if (configResult._tag === 'Right' && configResult.right) {
+    const config = configResult.right;
     const keycloakUrlInput = document.getElementById('keycloakUrl') as HTMLInputElement;
     const realmInput = document.getElementById('realm') as HTMLInputElement;
     const clientIdInput = document.getElementById('clientId') as HTMLInputElement;

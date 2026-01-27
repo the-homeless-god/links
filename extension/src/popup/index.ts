@@ -60,8 +60,10 @@ const checkAuth = (): T.Task<boolean> =>
   );
 
 // Отображение информации о пользователе
-function displayUserInfo(): void {
-  getAuthState().then(({ userInfo }) => {
+async function displayUserInfo(): Promise<void> {
+  const authResult = await getAuthState()();
+  if (authResult._tag === 'Right') {
+    const { userInfo } = authResult.right;
     if (userInfo) {
       const username = userInfo.preferred_username || userInfo.sub || 'Guest';
       const header = document.querySelector('.header h1');
@@ -69,15 +71,18 @@ function displayUserInfo(): void {
         header.textContent = `🔗 Links Manager (${username})`;
       }
     }
-  });
+  }
 }
 
 // Загрузка настроек
 async function loadSettings(): Promise<void> {
-  apiUrl = await getApiUrl();
-  const apiUrlInput = document.getElementById('apiUrl') as HTMLInputElement;
-  if (apiUrlInput) {
-    apiUrlInput.value = apiUrl;
+  const apiUrlResult = await getApiUrl()();
+  if (apiUrlResult._tag === 'Right') {
+    apiUrl = apiUrlResult.right;
+    const apiUrlInput = document.getElementById('apiUrl') as HTMLInputElement;
+    if (apiUrlInput) {
+      apiUrlInput.value = apiUrl;
+    }
   }
 }
 
@@ -147,7 +152,7 @@ function renderLinks(): void {
     .map((link) => {
       const linkId = escapeHtml(link.id || '');
       const linkName = escapeHtml(link.name || '');
-      const isPublic = link.is_public === true || link.is_public === 1;
+      const isPublic = link.is_public === true;
       const publicBadge = isPublic
         ? '<span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">🌐 Публичная</span>'
         : '';
@@ -241,7 +246,7 @@ async function editLink(id: string): Promise<void> {
   if (linkUrl) linkUrl.value = link.url || '';
   if (linkDescription) linkDescription.value = link.description || '';
   if (linkGroup) linkGroup.value = link.group_id || '';
-  if (linkIsPublic) linkIsPublic.checked = link.is_public === true || link.is_public === 1;
+  if (linkIsPublic) linkIsPublic.checked = link.is_public === true;
   if (linkModal) linkModal.style.display = 'block';
 }
 
@@ -358,11 +363,12 @@ async function fillCurrentPageUrl(): Promise<void> {
       (window as unknown as { currentPageTitle?: string }).currentPageTitle = tab.title || '';
     }
 
-    const pendingLink = await getPendingLink();
-    if (pendingLink) {
+    const pendingLinkResult = await getPendingLink()();
+    if (pendingLinkResult._tag === 'Right' && pendingLinkResult.right) {
+      const pendingLink = pendingLinkResult.right;
       (window as unknown as { currentPageUrl?: string }).currentPageUrl = pendingLink.url;
       (window as unknown as { currentPageTitle?: string }).currentPageTitle = pendingLink.title;
-      await clearPendingLink();
+      await clearPendingLink()();
     }
   } catch (error) {
     console.error('Error getting current tab:', error);
@@ -582,7 +588,15 @@ function showError(message: string): void {
 // Экспорт ссылок
 async function exportLinksHandler(): Promise<void> {
   try {
-    const exportData = await exportLinks();
+    const exportDataResult = await exportLinks()();
+    if (exportDataResult._tag === 'Left') {
+      const exportResult = document.getElementById('exportResult');
+      if (exportResult) {
+        showMessage(exportResult, 'Ошибка экспорта: ' + exportDataResult.left.message, 'error');
+      }
+      return;
+    }
+    const exportData = exportDataResult.right;
 
     if (exportData.links.length === 0) {
       const exportResult = document.getElementById('exportResult');
@@ -711,7 +725,12 @@ async function importLinksHandler(): Promise<void> {
 
     resultDiv.innerHTML = '<div class="loading">Импорт ссылок...</div>';
 
-    const { success, errors } = await importLinks(linksToImport);
+    const importResult = await importLinks(linksToImport)();
+    if (importResult._tag === 'Left') {
+      showMessage(resultDiv, 'Ошибка импорта: ' + importResult.left.message, 'error');
+      return;
+    }
+    const { success, errors } = importResult.right;
 
     let resultHTML = `
       <div class="success">
@@ -726,7 +745,7 @@ async function importLinksHandler(): Promise<void> {
         <div class="error" style="margin-top: 10px;">
           <strong>Ошибки:</strong>
           <ul style="margin: 8px 0; padding-left: 20px;">
-            ${errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}
+            ${errors.map((e: string) => `<li>${escapeHtml(e)}</li>`).join('')}
           </ul>
         </div>
       `;
@@ -737,7 +756,7 @@ async function importLinksHandler(): Promise<void> {
           <ul style="margin: 8px 0; padding-left: 20px;">
             ${errors
               .slice(0, 10)
-              .map((e) => `<li>${escapeHtml(e)}</li>`)
+              .map((e: string) => `<li>${escapeHtml(e)}</li>`)
               .join('')}
           </ul>
         </div>
