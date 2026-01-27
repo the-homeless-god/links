@@ -25,8 +25,12 @@ defmodule LinksApiWeb.LinkControllerTest do
     test "returns only links for authenticated user" do
       # Создаем ссылки для разных пользователей
       {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
-      {:ok, _link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
-      {:ok, _link3} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-3", "user_id", @user2_id))
+
+      {:ok, _link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
+
+      {:ok, _link3} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-3") |> Map.put("user_id", @user2_id))
 
       # Создаем conn с assigns
       conn =
@@ -63,7 +67,9 @@ defmodule LinksApiWeb.LinkControllerTest do
     test "guest user sees only guest links" do
       # Создаем ссылки для guest и обычного пользователя
       {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @guest_id))
-      {:ok, _link2} = SqliteRepo.create_link(Map.put(@valid_link_params, "name" => "test-link-2", "user_id", @user1_id))
+
+      {:ok, _link2} =
+        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:get, "/api/links")
@@ -175,7 +181,8 @@ defmodule LinksApiWeb.LinkControllerTest do
 
       conn =
         Plug.Test.conn(:put, "/api/links/#{link["id"]}")
-        |> Plug.Conn.assign(:user_id, @user2_id)  # Другой пользователь
+        # Другой пользователь
+        |> Plug.Conn.assign(:user_id, @user2_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
         |> Map.put(:body_params, update_params)
 
@@ -221,7 +228,8 @@ defmodule LinksApiWeb.LinkControllerTest do
 
       conn =
         Plug.Test.conn(:delete, "/api/links/#{link["id"]}")
-        |> Plug.Conn.assign(:user_id, @user2_id)  # Другой пользователь
+        # Другой пользователь
+        |> Plug.Conn.assign(:user_id, @user2_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
 
       result = LinkController.delete(conn, %{"id" => link["id"]})

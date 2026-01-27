@@ -37,21 +37,25 @@ defmodule LinksApi.SqliteRepo do
       updated_at TEXT
     );
     """
+
     :ok = Exqlite.Sqlite3.execute(conn, create_table_query)
 
     # Создаем индекс по group_id для фильтрации
     create_index_query = """
     CREATE INDEX IF NOT EXISTS links_group_id_idx ON links (group_id);
     """
+
     :ok = Exqlite.Sqlite3.execute(conn, create_index_query)
 
     # Удаляем старый уникальный индекс, если он существует (на случай если он был создан с ошибкой)
     drop_old_index_query = """
     DROP INDEX IF EXISTS links_name_unique_idx;
     """
+
     case Exqlite.Sqlite3.execute(conn, drop_old_index_query) do
       :ok -> :ok
-      {:error, _} -> :ok  # Игнорируем ошибки
+      # Игнорируем ошибки
+      {:error, _} -> :ok
     end
 
     # Обрабатываем дубликаты имен перед созданием уникального индекса
@@ -74,7 +78,9 @@ defmodule LinksApi.SqliteRepo do
 
     # Выполняем очистку дубликатов (может не найти дубликаты - это нормально)
     case Exqlite.Sqlite3.execute(conn, cleanup_duplicates_query) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, reason} ->
         require Logger
         Logger.debug("Очистка дубликатов: #{inspect(reason)} (может быть нормально, если дубликатов нет)")
@@ -87,12 +93,18 @@ defmodule LinksApi.SqliteRepo do
     """
 
     case Exqlite.Sqlite3.execute(conn, create_unique_index_query) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, reason} ->
         # Если все еще есть дубликаты, логируем и продолжаем без уникального индекса
         require Logger
-        Logger.warning("Не удалось создать уникальный индекс на name: #{inspect(reason)}. " <>
-                      "В базе данных могут быть дубликаты имен.")
+
+        Logger.warning(
+          "Не удалось создать уникальный индекс на name: #{inspect(reason)}. " <>
+            "В базе данных могут быть дубликаты имен."
+        )
+
         :ok
     end
 
@@ -100,30 +112,36 @@ defmodule LinksApi.SqliteRepo do
     add_user_id_column_query = """
     ALTER TABLE links ADD COLUMN user_id TEXT;
     """
+
     case Exqlite.Sqlite3.execute(conn, add_user_id_column_query) do
       :ok -> :ok
-      {:error, _} -> :ok  # Колонка уже существует - это нормально
+      # Колонка уже существует - это нормально
+      {:error, _} -> :ok
     end
 
     # Добавляем колонку is_public если её нет (для существующих БД)
     add_is_public_column_query = """
     ALTER TABLE links ADD COLUMN is_public INTEGER DEFAULT 0;
     """
+
     case Exqlite.Sqlite3.execute(conn, add_is_public_column_query) do
       :ok -> :ok
-      {:error, _} -> :ok  # Колонка уже существует - это нормально
+      # Колонка уже существует - это нормально
+      {:error, _} -> :ok
     end
 
     # Создаем индекс по user_id для фильтрации по пользователю
     create_user_index_query = """
     CREATE INDEX IF NOT EXISTS links_user_id_idx ON links (user_id);
     """
+
     :ok = Exqlite.Sqlite3.execute(conn, create_user_index_query)
 
     # Создаем индекс по is_public для быстрого поиска публичных ссылок
     create_public_index_query = """
     CREATE INDEX IF NOT EXISTS links_is_public_idx ON links (is_public);
     """
+
     :ok = Exqlite.Sqlite3.execute(conn, create_public_index_query)
 
     {:ok, %{conn: conn}}
@@ -137,13 +155,16 @@ defmodule LinksApi.SqliteRepo do
       case get_link_by_name(link_params["name"]) do
         {:ok, _existing_link} ->
           {:error, :name_already_exists}
+
         {:error, :not_found} ->
           # name уникален, продолжаем создание
           now = DateTime.utc_now() |> DateTime.to_iso8601()
-          link = Map.merge(link_params, %{
-            "created_at" => now,
-            "updated_at" => now
-          })
+
+          link =
+            Map.merge(link_params, %{
+              "created_at" => now,
+              "updated_at" => now
+            })
 
           query = """
           INSERT INTO links (id, name, url, description, group_id, user_id, is_public, created_at, updated_at)
@@ -166,16 +187,22 @@ defmodule LinksApi.SqliteRepo do
           ]
 
           case GenServer.call(__MODULE__, {:execute, query, params}) do
-            {:ok, _} -> {:ok, link}
+            {:ok, _} ->
+              {:ok, link}
+
             {:error, reason} when is_binary(reason) ->
               if String.contains?(reason, "UNIQUE constraint") do
                 {:error, :name_already_exists}
               else
                 {:error, reason}
               end
-            error -> error
+
+            error ->
+              error
           end
-        error -> error
+
+        error ->
+          error
       end
     else
       {:error, :name_required}
@@ -193,10 +220,13 @@ defmodule LinksApi.SqliteRepo do
           case get_link_by_name(link_params["name"]) do
             {:ok, _existing_link} ->
               {:error, :name_already_exists}
+
             {:error, :not_found} ->
               # name уникален, продолжаем обновление
               update_link_internal(id, existing_link, link_params)
-            error -> error
+
+            error ->
+              error
           end
         else
           # name не изменяется или не указан, продолжаем обновление
@@ -222,8 +252,12 @@ defmodule LinksApi.SqliteRepo do
 
     # Преобразуем boolean в integer для SQLite
     is_public = if updated_link["is_public"] == true or updated_link["is_public"] == 1, do: 1, else: 0
+
     # Если is_public не указан, используем значение из существующей ссылки
-    is_public = if Map.has_key?(updated_link, "is_public"), do: is_public, else: (if existing_link["is_public"] == 1, do: 1, else: 0)
+    is_public =
+      if Map.has_key?(updated_link, "is_public"),
+        do: is_public,
+        else: if(existing_link["is_public"] == 1, do: 1, else: 0)
 
     params = [
       updated_link["name"],
@@ -237,14 +271,18 @@ defmodule LinksApi.SqliteRepo do
     ]
 
     case GenServer.call(__MODULE__, {:execute, query, params}) do
-      {:ok, _} -> {:ok, updated_link}
+      {:ok, _} ->
+        {:ok, updated_link}
+
       {:error, reason} when is_binary(reason) ->
         if String.contains?(reason, "UNIQUE constraint") do
           {:error, :name_already_exists}
         else
           {:error, reason}
         end
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -282,7 +320,9 @@ defmodule LinksApi.SqliteRepo do
       {:ok, rows} ->
         links = Enum.map(rows, &row_to_map/1)
         {:ok, links}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -295,7 +335,9 @@ defmodule LinksApi.SqliteRepo do
       {:ok, rows} ->
         links = Enum.map(rows, &row_to_map/1)
         {:ok, links}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -321,7 +363,9 @@ defmodule LinksApi.SqliteRepo do
       {:ok, rows} ->
         links = Enum.map(rows, &row_to_map/1)
         {:ok, links}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -338,32 +382,44 @@ defmodule LinksApi.SqliteRepo do
   # Обработка запросов к SQLite
   @impl true
   def handle_call({:execute, query, params}, _from, %{conn: conn} = state) do
-    result = case Exqlite.Sqlite3.prepare(conn, query) do
-      {:ok, statement} ->
-        case bind_params(conn, statement, params) do
-          :ok ->
-            case Exqlite.Sqlite3.step(conn, statement) do
-              :done -> {:ok, []}
-              error -> error
-            end
-          error -> error
-        end
-      error -> error
-    end
+    result =
+      case Exqlite.Sqlite3.prepare(conn, query) do
+        {:ok, statement} ->
+          case bind_params(conn, statement, params) do
+            :ok ->
+              case Exqlite.Sqlite3.step(conn, statement) do
+                :done -> {:ok, []}
+                error -> error
+              end
+
+            error ->
+              error
+          end
+
+        error ->
+          error
+      end
+
     {:reply, result, state}
   end
 
   @impl true
   def handle_call({:query, query, params}, _from, %{conn: conn} = state) do
-    result = case Exqlite.Sqlite3.prepare(conn, query) do
-      {:ok, statement} ->
-        case bind_params(conn, statement, params) do
-          :ok ->
-            fetch_all_rows(conn, statement, [])
-          error -> error
-        end
-      error -> error
-    end
+    result =
+      case Exqlite.Sqlite3.prepare(conn, query) do
+        {:ok, statement} ->
+          case bind_params(conn, statement, params) do
+            :ok ->
+              fetch_all_rows(conn, statement, [])
+
+            error ->
+              error
+          end
+
+        error ->
+          error
+      end
+
     {:reply, result, state}
   end
 
@@ -388,8 +444,10 @@ defmodule LinksApi.SqliteRepo do
         # Создаем карту из названий колонок и значений
         row_map = Enum.zip(columns, row) |> Enum.into(%{})
         fetch_all_rows(conn, statement, [row_map | acc])
+
       :done ->
         {:ok, Enum.reverse(acc)}
+
       error ->
         error
     end
@@ -401,19 +459,21 @@ defmodule LinksApi.SqliteRepo do
     row = Enum.map(row, fn {k, v} -> {to_string(k), v} end) |> Enum.into(%{})
 
     # Преобразуем is_public из integer в boolean
-    row = Map.update(row, "is_public", false, fn
-      1 -> true
-      0 -> false
-      val -> val
-    end)
+    row =
+      Map.update(row, "is_public", false, fn
+        1 -> true
+        0 -> false
+        val -> val
+      end)
 
     # Преобразуем ISO8601 строки в DateTime
-    row = if row["created_at"] do
-      {:ok, dt, _} = DateTime.from_iso8601(row["created_at"])
-      Map.put(row, "created_at", dt)
-    else
-      row
-    end
+    row =
+      if row["created_at"] do
+        {:ok, dt, _} = DateTime.from_iso8601(row["created_at"])
+        Map.put(row, "created_at", dt)
+      else
+        row
+      end
 
     if row["updated_at"] do
       {:ok, dt, _} = DateTime.from_iso8601(row["updated_at"])

@@ -34,10 +34,7 @@ export const setAuthState = (token: string, userInfo: UserInfo): TE.TaskEither<E
 export const clearAuthState = (): TE.TaskEither<Error, void> =>
   TE.tryCatch(
     async () => {
-      await chrome.storage.local.remove([
-        STORAGE_KEYS.AUTH_TOKEN,
-        STORAGE_KEYS.USER_INFO,
-      ]);
+      await chrome.storage.local.remove([STORAGE_KEYS.AUTH_TOKEN, STORAGE_KEYS.USER_INFO]);
       log.info('Auth state cleared');
     },
     (error) => new Error(`Failed to clear auth state: ${error}`)

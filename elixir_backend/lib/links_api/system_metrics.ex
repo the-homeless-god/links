@@ -6,11 +6,15 @@ defmodule LinksApi.SystemMetrics do
 
   # Функция для сбора метрик VM
   def vm_metrics() do
-    :telemetry.execute([:links_api, :vm], %{
-      memory: :erlang.memory(),
-      process_count: :erlang.system_info(:process_count),
-      io: get_io_stats()
-    }, %{})
+    :telemetry.execute(
+      [:links_api, :vm],
+      %{
+        memory: :erlang.memory(),
+        process_count: :erlang.system_info(:process_count),
+        io: get_io_stats()
+      },
+      %{}
+    )
   end
 
   # Получение статистики IO

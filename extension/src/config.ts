@@ -16,4 +16,4 @@ export const FILTERS = {
   PERSONAL: 'personal',
 } as const;
 
-export type FilterType = typeof FILTERS[keyof typeof FILTERS];
+export type FilterType = (typeof FILTERS)[keyof typeof FILTERS];

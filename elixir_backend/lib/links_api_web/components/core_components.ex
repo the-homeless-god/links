@@ -6,9 +6,9 @@ defmodule LinksApiWeb.CoreComponents do
   @doc """
   Renders a flash notice.
   """
-  attr :flash, :map, required: true
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling"
-  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+  attr(:flash, :map, required: true)
+  attr(:kind, :atom, values: [:info, :error], doc: "used for styling")
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
   def flash(%{kind: kind} = assigns) do
     ~H"""
@@ -43,7 +43,7 @@ defmodule LinksApiWeb.CoreComponents do
   @doc """
   Renders a set of flash notices.
   """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
 
   def flash_group(assigns) do
     ~H"""
@@ -55,8 +55,8 @@ defmodule LinksApiWeb.CoreComponents do
   @doc """
   Renders an icon.
   """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
+  attr(:name, :string, required: true)
+  attr(:class, :string, default: nil)
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""

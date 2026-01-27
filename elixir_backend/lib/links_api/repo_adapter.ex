@@ -18,6 +18,7 @@ defmodule LinksApi.RepoAdapter do
     if Keyword.get(config, :schema) != Link do
       raise "LinksApi.RepoAdapter работает только с LinksApi.Schemas.Link"
     end
+
     config
   end
 
@@ -68,16 +69,21 @@ defmodule LinksApi.RepoAdapter do
   # Обновление записи
   def update(changeset) do
     id = changeset.data.id
+
     changes =
       changeset.changes
       |> Map.take([:name, :url, :description, :group_id])
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
 
     case repo_module().update_link(id, changes) do
-      {:ok, link} -> {:ok, to_schema(link)}
+      {:ok, link} ->
+        {:ok, to_schema(link)}
+
       {:error, :name_already_exists} ->
         {:error, changeset_with_error(changeset, {:error, :name_already_exists})}
-      error -> {:error, changeset_with_error(changeset, error)}
+
+      error ->
+        {:error, changeset_with_error(changeset, error)}
     end
   end
 
@@ -153,10 +159,13 @@ defmodule LinksApi.RepoAdapter do
     case error do
       {:error, :name_already_exists} ->
         Ecto.Changeset.add_error(changeset, :name, "уже существует. Пожалуйста, выберите другое имя.")
+
       {:error, :name_required} ->
         Ecto.Changeset.add_error(changeset, :name, "обязательно для заполнения")
+
       {:error, reason} ->
         Ecto.Changeset.add_error(changeset, :base, "Database error: #{inspect(reason)}")
+
       _ ->
         Ecto.Changeset.add_error(changeset, :base, "Database error: #{inspect(error)}")
     end
@@ -164,16 +173,19 @@ defmodule LinksApi.RepoAdapter do
 
   # Применение фильтров
   defp apply_filters(links, nil), do: links
+
   defp apply_filters(links, filters) when is_list(filters) do
     Enum.reduce(filters, links, fn filter, acc ->
       apply_filter(acc, filter)
     end)
   end
+
   defp apply_filters(links, _), do: links
 
   # Применение отдельного фильтра
   defp apply_filter(links, {field, value}) do
     field_str = to_string(field)
+
     Enum.filter(links, fn link ->
       String.contains?(String.downcase(link[field_str] || ""), String.downcase(value))
     end)
@@ -181,10 +193,12 @@ defmodule LinksApi.RepoAdapter do
 
   # Применение сортировки
   defp apply_sort(links, nil), do: links
+
   defp apply_sort(links, [{field, direction}]) do
     field_str = to_string(field)
-    Enum.sort_by(links, &(&1[field_str]), sort_direction(direction))
+    Enum.sort_by(links, & &1[field_str], sort_direction(direction))
   end
+
   defp apply_sort(links, _), do: links
 
   # Преобразование направления сортировки
@@ -194,10 +208,12 @@ defmodule LinksApi.RepoAdapter do
 
   # Применение пагинации
   defp apply_pagination(links, nil, _), do: links
+
   defp apply_pagination(links, limit, offset) when is_integer(limit) and is_integer(offset) do
     links
     |> Enum.drop(offset)
     |> Enum.take(limit)
   end
+
   defp apply_pagination(links, _, _), do: links
 end

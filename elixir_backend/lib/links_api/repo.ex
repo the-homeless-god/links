@@ -35,6 +35,7 @@ defmodule LinksApi.Repo do
     CREATE KEYSPACE IF NOT EXISTS #{config[:keyspace]}
     WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1}
     """
+
     {:ok, _} = Xandra.execute(conn, create_keyspace_query, _params = [])
 
     # Устанавливаем keyspace для соединения
@@ -52,12 +53,14 @@ defmodule LinksApi.Repo do
       updated_at TIMESTAMP
     )
     """
+
     {:ok, _} = Xandra.execute(conn, create_table_query, _params = [])
 
     # Создаем индекс по group_id для фильтрации
     create_index_query = """
     CREATE INDEX IF NOT EXISTS links_group_id_idx ON links (group_id)
     """
+
     {:ok, _} = Xandra.execute(conn, create_index_query, _params = [])
 
     {:ok, %{conn: conn, keyspace: config[:keyspace]}}
@@ -67,10 +70,12 @@ defmodule LinksApi.Repo do
   @impl true
   def create_link(link_params) do
     now = DateTime.utc_now()
-    link = Map.merge(link_params, %{
-      "created_at" => now,
-      "updated_at" => now
-    })
+
+    link =
+      Map.merge(link_params, %{
+        "created_at" => now,
+        "updated_at" => now
+      })
 
     query = """
     INSERT INTO links (id, name, url, description, group_id, created_at, updated_at)
@@ -136,7 +141,9 @@ defmodule LinksApi.Repo do
           [row] -> {:ok, row_to_map(row)}
           [] -> {:error, :not_found}
         end
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -149,7 +156,9 @@ defmodule LinksApi.Repo do
       {:ok, %Xandra.Page{} = page} ->
         links = Enum.map(page, &row_to_map/1)
         {:ok, links}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -163,7 +172,9 @@ defmodule LinksApi.Repo do
       {:ok, %Xandra.Page{} = page} ->
         links = Enum.map(page, &row_to_map/1)
         {:ok, links}
-      error -> error
+
+      error ->
+        error
     end
   end
 

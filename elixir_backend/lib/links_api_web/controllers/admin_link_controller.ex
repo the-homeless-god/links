@@ -19,10 +19,12 @@ defmodule LinksApiWeb.AdminLinkController do
 
     # Добавляем временные метки
     now = DateTime.utc_now() |> DateTime.to_iso8601()
-    link_params_with_timestamps = Map.merge(link_params_with_id, %{
-      "created_at" => now,
-      "updated_at" => now
-    })
+
+    link_params_with_timestamps =
+      Map.merge(link_params_with_id, %{
+        "created_at" => now,
+        "updated_at" => now
+      })
 
     case SqliteRepo.create_link(link_params_with_timestamps) do
       {:ok, _link} ->
@@ -44,10 +46,12 @@ defmodule LinksApiWeb.AdminLinkController do
 
     # Добавляем временные метки
     now = DateTime.utc_now() |> DateTime.to_iso8601()
-    link_params_with_timestamps = Map.merge(link_params_with_id, %{
-      "created_at" => now,
-      "updated_at" => now
-    })
+
+    link_params_with_timestamps =
+      Map.merge(link_params_with_id, %{
+        "created_at" => now,
+        "updated_at" => now
+      })
 
     case SqliteRepo.create_link(link_params_with_timestamps) do
       {:ok, _link} ->

@@ -16,5 +16,5 @@ defmodule LinksApiWeb.Layouts do
     Path.join(["", path]) |> String.to_charlist() |> IO.iodata_to_binary()
   end
 
-  embed_templates "layouts/*"
+  embed_templates("layouts/*")
 end

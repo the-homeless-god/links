@@ -24,7 +24,9 @@ defmodule LinksApiWeb.LinkController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Link not found"})
-      error -> handle_error(conn, error)
+
+      error ->
+        handle_error(conn, error)
     end
   end
 
@@ -47,14 +49,17 @@ defmodule LinksApiWeb.LinkController do
         conn
         |> put_status(:created)
         |> json(link)
+
       {:error, :name_already_exists} ->
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
+
       {:error, :name_required} ->
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{error: "name_required", message: "Имя ссылки обязательно для заполнения"})
+
       error ->
         handle_error(conn, error)
     end
@@ -80,18 +85,22 @@ defmodule LinksApiWeb.LinkController do
           case SqliteRepo.update_link(id, params) do
             {:ok, updated_link} ->
               json(conn, updated_link)
+
             {:error, :name_already_exists} ->
               conn
               |> put_status(:unprocessable_entity)
               |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
+
             error ->
               handle_error(conn, error)
           end
         end
+
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Link not found"})
+
       error ->
         handle_error(conn, error)
     end
@@ -115,14 +124,17 @@ defmodule LinksApiWeb.LinkController do
               conn
               |> put_status(:no_content)
               |> json(%{success: true})
+
             error ->
               handle_error(conn, error)
           end
         end
+
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Link not found"})
+
       error ->
         handle_error(conn, error)
     end

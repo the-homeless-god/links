@@ -3,8 +3,21 @@ import * as T from 'fp-ts/Task';
 import { pipe } from 'fp-ts/function';
 import type { Link, FilterType } from '@/types';
 import { FILTERS } from '@/config';
-import { fetchLinks, createLink, updateLink, deleteLink, exportLinks, importLinks } from '@/services/api';
-import { getAuthState, getApiUrl, setApiUrl, getPendingLink, clearPendingLink } from '@/services/storage';
+import {
+  fetchLinks,
+  createLink,
+  updateLink,
+  deleteLink,
+  exportLinks,
+  importLinks,
+} from '@/services/api';
+import {
+  getAuthState,
+  getApiUrl,
+  setApiUrl,
+  getPendingLink,
+  clearPendingLink,
+} from '@/services/storage';
 import { escapeHtml, formatDate, copyToClipboard, showMessage } from '@/utils/dom';
 import { log } from '@/services/logger';
 
@@ -389,7 +402,8 @@ function setupEventListeners(): void {
       if (linkForm) linkForm.reset();
 
       const currentPageUrl = (window as unknown as { currentPageUrl?: string }).currentPageUrl;
-      const currentPageTitle = (window as unknown as { currentPageTitle?: string }).currentPageTitle;
+      const currentPageTitle = (window as unknown as { currentPageTitle?: string })
+        .currentPageTitle;
 
       if (currentPageUrl && linkUrl) {
         linkUrl.value = currentPageUrl;
@@ -644,7 +658,8 @@ async function copyExportData(): Promise<void> {
 
     const errorMsg = document.createElement('div');
     errorMsg.className = 'error';
-    errorMsg.textContent = '❌ Не удалось скопировать. Выделите текст вручную и скопируйте (Ctrl+C / Cmd+C)';
+    errorMsg.textContent =
+      '❌ Не удалось скопировать. Выделите текст вручную и скопируйте (Ctrl+C / Cmd+C)';
     errorMsg.style.marginTop = '10px';
     resultDiv.appendChild(errorMsg);
 
@@ -720,7 +735,10 @@ async function importLinksHandler(): Promise<void> {
         <div class="error" style="margin-top: 10px;">
           <strong>Ошибок слишком много (${errors.length}). Показаны первые 10:</strong>
           <ul style="margin: 8px 0; padding-left: 20px;">
-            ${errors.slice(0, 10).map((e) => `<li>${escapeHtml(e)}</li>`).join('')}
+            ${errors
+              .slice(0, 10)
+              .map((e) => `<li>${escapeHtml(e)}</li>`)
+              .join('')}
           </ul>
         </div>
       `;
