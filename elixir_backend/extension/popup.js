@@ -1,14 +1,28 @@
 // API конфигурация
 let API_URL = 'http://localhost:4000';
 
+// Константы для авторизации
+const AUTH_TOKEN_KEY = 'auth_token';
+const USER_INFO_KEY = 'user_info';
+
 // Состояние приложения
 let currentLinks = [];
 let currentFilter = 'all';
 let editingLinkId = null;
 let actionButtonsSetup = false;
+let authToken = null;
+let userInfo = null;
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
+  // Проверяем авторизацию
+  const authResult = await checkAuth();
+  if (!authResult) {
+    // Если не авторизован, перенаправляем на страницу авторизации
+    window.location.href = 'auth.html';
+    return;
+  }
+  
   await loadSettings();
   await loadLinks();
   setupEventListeners();
@@ -16,7 +30,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Настраиваем делегирование событий для кнопок действий
   setupActionButtons();
+  
+  // Показываем информацию о пользователе
+  displayUserInfo();
 });
+
+// Проверка авторизации
+async function checkAuth() {
+  try {
+    const result = await chrome.storage.local.get([AUTH_TOKEN_KEY, USER_INFO_KEY]);
+    authToken = result[AUTH_TOKEN_KEY];
+    userInfo = result[USER_INFO_KEY];
+    
+    if (!authToken) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return false;
+  }
+}
+
+// Получение заголовков для API запросов
+function getAuthHeaders() {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (authToken === 'guest') {
+    headers['X-Guest-Token'] = 'guest';
+  } else if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  
+  return headers;
+}
+
+// Отображение информации о пользователе
+function displayUserInfo() {
+  if (userInfo) {
+    const username = userInfo.preferred_username || userInfo.sub || 'Guest';
+    const header = document.querySelector('.header h1');
+    if (header) {
+      header.textContent = `🔗 Links Manager (${username})`;
+    }
+  }
+}
 
 // Загрузка настроек
 async function loadSettings() {
@@ -40,8 +101,15 @@ async function saveSettings() {
 async function loadLinks() {
   try {
     showLoading();
-    const response = await fetch(`${API_URL}/api/links`);
+    const response = await fetch(`${API_URL}/api/links`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
+      if (response.status === 401) {
+        // Не авторизован, перенаправляем на страницу авторизации
+        window.location.href = 'auth.html';
+        return;
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const links = await response.json();
@@ -195,7 +263,8 @@ async function deleteLink(id) {
 
   try {
     const response = await fetch(`${API_URL}/api/links/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
 
     // Проверяем статус ответа
@@ -264,14 +333,14 @@ async function saveLink(formData) {
       // Обновление
       response = await fetch(`${API_URL}/api/links/${editingLinkId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(linkData)
       });
     } else {
       // Создание
       response = await fetch(`${API_URL}/api/links`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(linkData)
       });
     }
@@ -466,6 +535,14 @@ function setupEventListeners() {
   // Кнопка импорта
   document.getElementById('importBtn').addEventListener('click', importLinks);
   
+  // Кнопка выхода
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    if (confirm('Вы уверены, что хотите выйти?')) {
+      await chrome.storage.local.remove(['auth_token', 'user_info']);
+      window.location.href = 'auth.html';
+    }
+  });
+  
   // Кнопка копирования экспорта (делегирование событий, так как кнопка создается динамически)
   document.addEventListener('click', async (e) => {
     if (e.target.id === 'copyExportBtn' || e.target.closest('#copyExportBtn')) {
@@ -566,7 +643,9 @@ function formatDate(dateString) {
 async function exportLinks() {
   try {
     // Загружаем все ссылки
-    const response = await fetch(`${API_URL}/api/links`);
+    const response = await fetch(`${API_URL}/api/links`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -751,7 +830,7 @@ async function importLinks() {
         // Пытаемся создать ссылку
         const response = await fetch(`${API_URL}/api/links`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(linkData)
         });
         

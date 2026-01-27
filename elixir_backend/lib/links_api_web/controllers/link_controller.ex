@@ -5,8 +5,10 @@ defmodule LinksApiWeb.LinkController do
 
   # Получение всех ссылок
   def index(conn, _params) do
-    with {:ok, links} <- SqliteRepo.get_all_links() do
-      # Временно отключаем фильтрацию ссылок по правам доступа
+    # Получаем user_id из assigns (установлен AuthPlug)
+    user_id = Map.get(conn.assigns, :user_id, "guest")
+
+    with {:ok, links} <- SqliteRepo.get_all_links_by_user(user_id) do
       json(conn, links)
     else
       error -> handle_error(conn, error)
@@ -32,6 +34,10 @@ defmodule LinksApiWeb.LinkController do
     params = conn.body_params
     # Генерируем UUID для новой ссылки если он не был предоставлен
     params = Map.put_new(params, "id", UUID.uuid4())
+
+    # Получаем user_id из assigns (установлен AuthPlug)
+    user_id = Map.get(conn.assigns, :user_id, "guest")
+    params = Map.put(params, "user_id", user_id)
 
     # Упрощаем логику с группами для тестирования
     params = if params["group_id"] == nil, do: Map.put(params, "group_id", ""), else: params
@@ -59,17 +65,28 @@ defmodule LinksApiWeb.LinkController do
     # Получаем параметры из тела запроса
     params = conn.body_params
 
+    # Получаем user_id из assigns (установлен AuthPlug)
+    user_id = Map.get(conn.assigns, :user_id, "guest")
+    params = Map.put(params, "user_id", user_id)
+
     case SqliteRepo.get_link(id) do
-      {:ok, _link} ->
-        case SqliteRepo.update_link(id, params) do
-          {:ok, updated_link} ->
-            json(conn, updated_link)
-          {:error, :name_already_exists} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
-          error ->
-            handle_error(conn, error)
+      {:ok, link} ->
+        # Проверяем, что ссылка принадлежит пользователю
+        if link["user_id"] != user_id do
+          conn
+          |> put_status(:forbidden)
+          |> json(%{error: "Forbidden: Link does not belong to user"})
+        else
+          case SqliteRepo.update_link(id, params) do
+            {:ok, updated_link} ->
+              json(conn, updated_link)
+            {:error, :name_already_exists} ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{error: "name_already_exists", message: "Имя ссылки уже существует"})
+            error ->
+              handle_error(conn, error)
+          end
         end
       {:error, :not_found} ->
         conn
@@ -82,16 +99,25 @@ defmodule LinksApiWeb.LinkController do
 
   # Удаление ссылки
   def delete(conn, %{"id" => id}) do
-    # Отключаем проверку прав на удаление
+    # Получаем user_id из assigns (установлен AuthPlug)
+    user_id = Map.get(conn.assigns, :user_id, "guest")
+
     case SqliteRepo.get_link(id) do
-      {:ok, _link} ->
-        case SqliteRepo.delete_link(id) do
-          :ok ->
-            conn
-            |> put_status(:no_content)
-            |> json(%{success: true})
-          error ->
-            handle_error(conn, error)
+      {:ok, link} ->
+        # Проверяем, что ссылка принадлежит пользователю
+        if link["user_id"] != user_id do
+          conn
+          |> put_status(:forbidden)
+          |> json(%{error: "Forbidden: Link does not belong to user"})
+        else
+          case SqliteRepo.delete_link(id) do
+            :ok ->
+              conn
+              |> put_status(:no_content)
+              |> json(%{success: true})
+            error ->
+              handle_error(conn, error)
+          end
         end
       {:error, :not_found} ->
         conn

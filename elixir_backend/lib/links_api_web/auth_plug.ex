@@ -10,25 +10,57 @@ defmodule LinksApiWeb.AuthPlug do
   def call(conn, _opts) do
     case get_token(conn) do
       nil ->
-        conn
-        |> put_status(401)
-        |> Phoenix.Controller.json(%{error: "Unauthorized"})
-        |> halt()
+        # Если токена нет, проверяем guest режим
+        case get_guest_token(conn) do
+          "guest" ->
+            # Создаем guest пользователя
+            guest_claims = %{"sub" => "guest", "user_id" => "guest", "preferred_username" => "guest"}
+            conn
+            |> assign(:current_user, guest_claims)
+            |> assign(:user_roles, [])
+            |> assign(:user_id, "guest")
+          _ ->
+            conn
+            |> put_status(401)
+            |> Phoenix.Controller.json(%{error: "Unauthorized"})
+            |> halt()
+        end
 
       token ->
         case KeycloakToken.verify_token(token) do
           {:ok, claims} ->
+            # Извлекаем user_id из claims (sub или user_id)
+            user_id = Map.get(claims, "user_id") || Map.get(claims, "sub") || "guest"
             # Сохраняем информацию о пользователе в контексте запроса
             conn
             |> assign(:current_user, claims)
             |> assign(:user_roles, KeycloakToken.get_roles(claims))
+            |> assign(:user_id, user_id)
 
           {:error, _reason} ->
-            conn
-            |> put_status(401)
-            |> Phoenix.Controller.json(%{error: "Invalid token"})
-            |> halt()
+            # Если токен невалидный, пробуем guest режим
+            case get_guest_token(conn) do
+              "guest" ->
+                guest_claims = %{"sub" => "guest", "user_id" => "guest", "preferred_username" => "guest"}
+                conn
+                |> assign(:current_user, guest_claims)
+                |> assign(:user_roles, [])
+                |> assign(:user_id, "guest")
+              _ ->
+                conn
+                |> put_status(401)
+                |> Phoenix.Controller.json(%{error: "Invalid token"})
+                |> halt()
+            end
         end
+    end
+  end
+
+  # Проверка guest токена из заголовка
+  defp get_guest_token(conn) do
+    case get_req_header(conn, "x-guest-token") do
+      ["guest"] -> "guest"
+      _ -> nil
     end
   end
 

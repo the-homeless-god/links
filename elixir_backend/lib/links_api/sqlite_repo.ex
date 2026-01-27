@@ -31,6 +31,7 @@ defmodule LinksApi.SqliteRepo do
       url TEXT NOT NULL,
       description TEXT,
       group_id TEXT,
+      user_id TEXT,
       created_at TEXT,
       updated_at TEXT
     );
@@ -114,8 +115,8 @@ defmodule LinksApi.SqliteRepo do
           })
 
           query = """
-          INSERT INTO links (id, name, url, description, group_id, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO links (id, name, url, description, group_id, user_id, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           """
 
           params = [
@@ -124,6 +125,7 @@ defmodule LinksApi.SqliteRepo do
             link["url"],
             link["description"] || "",
             link["group_id"] || "",
+            link["user_id"] || "guest",
             link["created_at"],
             link["updated_at"]
           ]
@@ -179,7 +181,7 @@ defmodule LinksApi.SqliteRepo do
 
     query = """
     UPDATE links
-    SET name = ?, url = ?, description = ?, group_id = ?, updated_at = ?
+    SET name = ?, url = ?, description = ?, group_id = ?, user_id = ?, updated_at = ?
     WHERE id = ?
     """
 
@@ -188,6 +190,7 @@ defmodule LinksApi.SqliteRepo do
       updated_link["url"],
       updated_link["description"] || "",
       updated_link["group_id"] || "",
+      updated_link["user_id"] || existing_link["user_id"] || "guest",
       updated_link["updated_at"],
       id
     ]
@@ -235,6 +238,19 @@ defmodule LinksApi.SqliteRepo do
     query = "SELECT * FROM links"
 
     case GenServer.call(__MODULE__, {:query, query, []}) do
+      {:ok, rows} ->
+        links = Enum.map(rows, &row_to_map/1)
+        {:ok, links}
+      error -> error
+    end
+  end
+
+  # API для получения всех ссылок пользователя
+  def get_all_links_by_user(user_id) do
+    query = "SELECT * FROM links WHERE user_id = ?"
+    params = [user_id]
+
+    case GenServer.call(__MODULE__, {:query, query, params}) do
       {:ok, rows} ->
         links = Enum.map(rows, &row_to_map/1)
         {:ok, links}
