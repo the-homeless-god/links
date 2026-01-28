@@ -16,7 +16,7 @@ weight: 1
 ## Клонирование репозитория
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/links.git
+git clone https://github.com/the-homeless-god/links.git
 cd links
 ```
 

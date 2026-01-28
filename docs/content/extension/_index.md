@@ -14,7 +14,7 @@ Chrome расширение для Links API предоставляет удоб
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/YOUR_USERNAME/links.git
+git clone https://github.com/the-homeless-god/links.git
 cd links/extension
 ```
 
@@ -79,4 +79,4 @@ npm run build
 
 ## Разработка
 
-См. [README расширения](https://github.com/YOUR_USERNAME/links/tree/main/extension) для подробностей о разработке.
+См. [README расширения](https://github.com/the-homeless-god/links/tree/main/extension) для подробностей о разработке.

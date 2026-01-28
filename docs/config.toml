@@ -1,4 +1,4 @@
-baseURL = 'https://YOUR_USERNAME.github.io/links/'
+baseURL = 'https://the-homeless-god.github.io/links/'
 title = 'Links API - Документация'
 languageCode = 'ru-ru'
 defaultContentLanguage = 'ru'
@@ -26,10 +26,10 @@ theme = 'PaperMod'
   ShowToc = true
   TocOpen = false
   
-  # Социальные ссылки (если нужны)
-  # [[params.socialIcons]]
-  #   name = "github"
-  #   url = "https://github.com/YOUR_USERNAME/links"
+  # Социальные ссылки
+  [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/the-homeless-god/links"
 
 [menu]
   [[menu.main]]

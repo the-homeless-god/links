@@ -11,10 +11,8 @@
 После настройки GitHub Pages обновите `baseURL` в `docs/config.toml`:
 
 ```toml
-baseURL = 'https://YOUR_USERNAME.github.io/links/'
+baseURL = 'https://the-homeless-god.github.io/links/'
 ```
-
-Замените `YOUR_USERNAME` на ваш GitHub username.
 
 Если ваш репозиторий называется по-другому, измените путь соответственно.
 

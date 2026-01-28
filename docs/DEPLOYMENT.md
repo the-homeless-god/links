@@ -25,12 +25,8 @@
 Откройте `docs/config.toml` и замените:
 
 ```toml
-baseURL = 'https://YOUR_USERNAME.github.io/links/'
+baseURL = 'https://the-homeless-god.github.io/links/'
 ```
-
-На ваш реальный URL. Например:
-- Если репозиторий: `https://github.com/username/links`
-- То baseURL: `https://username.github.io/links/`
 
 ### 3. Добавить тему как submodule (опционально)
 

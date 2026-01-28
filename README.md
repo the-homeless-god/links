@@ -2,7 +2,11 @@
 
 Высокопроизводительная система для управления ссылками с Chrome расширением для удобного доступа, разграничением прав доступа через Keycloak (с поддержкой гостевого режима) и централизованным логированием в ELK Stack.
 
-📚 **[Документация](https://YOUR_USERNAME.github.io/links/)** | [API Reference](https://YOUR_USERNAME.github.io/links/api/) | [Chrome Extension](https://YOUR_USERNAME.github.io/links/extension/)
+[![Backend Coverage](https://codecov.io/gh/the-homeless-god/links/branch/master/graph/badge.svg?flag=backend)](https://codecov.io/gh/the-homeless-god/links)
+[![Extension Coverage](https://codecov.io/gh/the-homeless-god/links/branch/master/graph/badge.svg?flag=extension)](https://codecov.io/gh/the-homeless-god/links)
+[![CI](https://github.com/the-homeless-god/links/workflows/CI/badge.svg)](https://github.com/the-homeless-god/links/actions)
+
+📚 **[Документация](https://the-homeless-god.github.io/links/)** | [API Reference](https://the-homeless-god.github.io/links/api/) | [Chrome Extension](https://the-homeless-god.github.io/links/extension/)
 
 ## Обзор системы
 
@@ -203,21 +207,47 @@ docker-compose up -d
 
 Система поддерживает несколько уровней тестирования:
 
+### Code Coverage
+
+Текущее покрытие кода тестами:
+
+- **Backend (Elixir)**: [![Backend Coverage](https://codecov.io/gh/the-homeless-god/links/branch/master/graph/badge.svg?flag=backend)](https://codecov.io/gh/the-homeless-god/links)
+- **Extension (TypeScript)**: [![Extension Coverage](https://codecov.io/gh/the-homeless-god/links/branch/master/graph/badge.svg?flag=extension)](https://codecov.io/gh/the-homeless-god/links)
+
+Подробные отчеты доступны на [Codecov](https://codecov.io/gh/the-homeless-god/links).
+
 ### Юнит-тесты
 
+**Backend:**
 ```bash
 cd elixir_backend
 mix test
 ```
 
+**Extension:**
+```bash
+cd extension
+npm test
+```
+
 ### Тесты с покрытием
 
+**Backend:**
 ```bash
+cd elixir_backend
 mix test --cover
 mix coveralls.html  # Генерация HTML-отчета о покрытии
 ```
 
 После этого HTML-отчет будет доступен в `elixir_backend/cover/excoveralls.html`.
+
+**Extension:**
+```bash
+cd extension
+npm run test:coverage
+```
+
+Отчет будет доступен в `extension/coverage/lcov-report/index.html`.
 
 ### Интеграционные тесты
 
@@ -355,4 +385,14 @@ mix credo          # Линтер кода
 
 ## Лицензия
 
-MIT
+Проект распространяется под лицензией BSD 3-Clause с ограничением на коммерческое использование. 
+
+**Требования:**
+- **Обязательное указание автора**: При любом использовании необходимо указывать автора: Marat Zimnurov (zimtir@mail.ru)
+- **Коммерческое использование**: Требует письменного согласования с автором (zimtir@mail.ru)
+
+См. [LICENSE](LICENSE) для подробностей.
+
+## Changelog
+
+Все изменения проекта документируются в [CHANGELOG.md](CHANGELOG.md).

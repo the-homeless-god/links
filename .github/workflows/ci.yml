@@ -82,5 +82,13 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: extension
+          name: extension-coverage
+        continue-on-error: true
+
       - name: Build extension
         run: npm run build
