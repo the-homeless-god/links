@@ -98,4 +98,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: links-api-${{ runner.os }}
-          path: elixir_backend/links-api-*.tar.gz
+          path: links-api-*.tar.gz
+          overwrite: true

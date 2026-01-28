@@ -61,7 +61,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v4
         with:
-          files: elixir_backend/links-api-*.tar.gz
+          files: links-api-*.tar.gz
           tag_name: ${{ steps.version.outputs.version }}
           name: Links API Backend ${{ steps.version.outputs.version }}
           body: |
