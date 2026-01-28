@@ -25,7 +25,8 @@ defmodule LinksApi.MixProject do
     [
       links_api: [
         include_executables_for: [:unix, :windows],
-        steps: [:assemble, :tar]
+        steps: [:assemble, :tar],
+        cookie: "links_api_cookie"
       ]
     ]
   end
