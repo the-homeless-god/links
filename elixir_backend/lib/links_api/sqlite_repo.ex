@@ -143,7 +143,7 @@ defmodule LinksApi.SqliteRepo do
     # Проверяем уникальность name перед созданием (для конкретного user_id)
     if link_params["name"] do
       user_id = Map.get(link_params, "user_id") || "guest"
-      
+
       # Проверяем, существует ли ссылка с таким именем для этого пользователя
       case get_link_by_name_and_user(link_params["name"], user_id) do
         {:ok, _existing_link} ->
@@ -220,7 +220,7 @@ defmodule LinksApi.SqliteRepo do
         # Проверяем уникальность name, если он изменяется (для конкретного user_id)
         if link_params["name"] && link_params["name"] != existing_link["name"] do
           user_id = Map.get(existing_link, "user_id") || "guest"
-          
+
           case get_link_by_name_and_user(link_params["name"], user_id) do
             {:ok, _existing_link} ->
               {:error, :name_already_exists}

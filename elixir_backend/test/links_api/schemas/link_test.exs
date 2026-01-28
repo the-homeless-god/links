@@ -49,6 +49,7 @@ defmodule LinksApi.Schemas.LinkTest do
         name: "Test Link",
         url: "http://"
       }
+
       changeset = Link.changeset(%Link{}, attrs)
       refute changeset.valid?
       assert "URL must have a host" in errors_on(changeset).url

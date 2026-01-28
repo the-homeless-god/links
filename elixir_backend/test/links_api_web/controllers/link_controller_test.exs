@@ -12,6 +12,7 @@ defmodule LinksApiWeb.LinkControllerTest do
 
   defp valid_link_params(name \\ nil) do
     unique_name = name || "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+
     %{
       "name" => unique_name,
       "url" => "https://example.com",
@@ -101,6 +102,7 @@ defmodule LinksApiWeb.LinkControllerTest do
       params = valid_link_params()
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
+
       # Имя может отличаться из-за уникальности, проверяем только user_id
       assert link["user_id"] == @user1_id
       assert link["name"] != nil

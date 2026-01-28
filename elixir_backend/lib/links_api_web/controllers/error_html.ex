@@ -1,5 +1,5 @@
 defmodule LinksApiWeb.ErrorHTML do
   use Phoenix.Component
 
-  embed_templates "error_html/*"
+  embed_templates("error_html/*")
 end

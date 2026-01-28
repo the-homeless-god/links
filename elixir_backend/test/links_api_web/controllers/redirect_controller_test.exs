@@ -12,6 +12,7 @@ defmodule LinksApiWeb.RedirectControllerTest do
     test "redirects to the target URL when link exists", %{conn: conn} do
       # Создаем тестовую ссылку
       name = "redirect-test-#{System.unique_integer([:positive])}"
+
       link_params = %{
         "id" => "test-link-#{System.unique_integer([:positive])}",
         "name" => name,
