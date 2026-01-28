@@ -1,0 +1,77 @@
+baseURL = 'https://YOUR_USERNAME.github.io/links/'
+title = 'Links API - Документация'
+languageCode = 'ru-ru'
+defaultContentLanguage = 'ru'
+theme = 'PaperMod'
+
+[params]
+  env = 'production'
+  title = 'Links API'
+  description = 'Документация для системы управления ссылками с Chrome расширением'
+  keywords = ['links', 'api', 'elixir', 'phoenix', 'chrome extension', 'documentation']
+  author = 'Links API Team'
+  
+  # Настройки темы PaperMod
+  homeInfoParams.Title = 'Links API'
+  homeInfoParams.Content = 'Система управления ссылками с Chrome расширением'
+  
+  # Меню
+  ShowReadingTime = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowRssButtonInSectionTermList = true
+  ShowAllPagesInArchive = true
+  ShowPageNums = true
+  ShowToc = true
+  TocOpen = false
+  
+  # Социальные ссылки (если нужны)
+  # [[params.socialIcons]]
+  #   name = "github"
+  #   url = "https://github.com/YOUR_USERNAME/links"
+
+[menu]
+  [[menu.main]]
+    identifier = "getting-started"
+    name = "Начало работы"
+    url = "/getting-started/"
+    weight = 10
+  
+  [[menu.main]]
+    identifier = "api"
+    name = "API"
+    url = "/api/"
+    weight = 20
+  
+  [[menu.main]]
+    identifier = "extension"
+    name = "Chrome Extension"
+    url = "/extension/"
+    weight = 30
+  
+  [[menu.main]]
+    identifier = "deployment"
+    name = "Развертывание"
+    url = "/deployment/"
+    weight = 40
+  
+  [[menu.main]]
+    identifier = "contributing"
+    name = "Участие в проекте"
+    url = "/contributing/"
+    weight = 50
+
+[markup]
+  [markup.highlight]
+    style = 'github'
+    lineNos = true
+    lineNumbersInTable = true
+    noClasses = false
+    codeFences = true
+    guessSyntax = true
+    anchorLineNos = true
+    tabWidth = 2
+
+[outputs]
+  home = ['HTML', 'RSS', 'JSON']
