@@ -58,10 +58,11 @@ defmodule LinksApi.Schemas.Link do
   # Валидация URL формата
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn _, url ->
-      case URI.parse(url) do
-        %URI{scheme: nil} -> [{field, "URL must have a scheme (http, https, etc.)"}]
-        %URI{host: nil} -> [{field, "URL must have a host"}]
-        _ -> []
+      uri = URI.parse(url)
+      cond do
+        is_nil(uri.scheme) -> [{field, "URL must have a scheme (http, https, etc.)"}]
+        is_nil(uri.host) or uri.host == "" -> [{field, "URL must have a host"}]
+        true -> []
       end
     end)
   end
