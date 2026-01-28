@@ -1,7 +1,6 @@
 defmodule LinksApiWeb.RedirectControllerTest do
   use LinksApiWeb.ConnCase, async: true
 
-  import LinksApiWeb.Layouts, only: [sigil_p: 2]
   alias LinksApi.SqliteRepo
 
   setup do
@@ -25,7 +24,7 @@ defmodule LinksApiWeb.RedirectControllerTest do
       {:ok, _link} = SqliteRepo.create_link(link_params)
 
       # Выполняем запрос на редирект
-      conn = get(conn, ~p"/r/#{name}")
+      conn = get(conn, "/r/#{name}")
 
       # Проверяем, что произошел редирект на правильный URL
       assert redirected_to(conn, 302) == "https://example.com"
@@ -34,7 +33,7 @@ defmodule LinksApiWeb.RedirectControllerTest do
     test "returns 404 when link doesn't exist", %{conn: conn} do
       # Выполняем запрос на редирект для несуществующей ссылки
       name = "nonexistent-#{System.unique_integer([:positive])}"
-      conn = get(conn, ~p"/r/#{name}")
+      conn = get(conn, "/r/#{name}")
 
       # Проверяем, что получен статус 404
       assert conn.status == 404

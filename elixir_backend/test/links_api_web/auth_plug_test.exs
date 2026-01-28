@@ -4,7 +4,6 @@ defmodule LinksApiWeb.AuthPlugTest do
   import Plug.Conn
 
   alias LinksApiWeb.AuthPlug
-  alias LinksApi.Auth.KeycloakToken
 
   describe "call/2" do
     test "returns 401 when no token and no guest token" do

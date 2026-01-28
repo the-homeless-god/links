@@ -10,9 +10,10 @@ defmodule LinksApi.Integration.LinksApiTest do
 
   setup do
     # Создаем тестовые данные с уникальными именами
-    unique_name = "test-link-#{System.unique_integer([:positive])}"
+    unique_id = "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+    unique_name = "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
     test_link = %{
-      "id" => "test-link-#{System.unique_integer([:positive])}",
+      "id" => unique_id,
       "name" => unique_name,
       "url" => "https://example.com",
       "description" => "Test link for integration testing",
@@ -87,9 +88,10 @@ defmodule LinksApi.Integration.LinksApiTest do
       {:ok, _created_link} = SqliteRepo.create_link(link)
 
       # Создаем ещё одну ссылку в той же группе
+      timestamp = :erlang.system_time(:microsecond)
       second_link = %{
-        "id" => "test-link-#{System.unique_integer([:positive])}",
-        "name" => "second-test-link-#{System.unique_integer([:positive])}",
+        "id" => "test-link-#{System.unique_integer([:positive])}-#{timestamp}",
+        "name" => "second-test-link-#{System.unique_integer([:positive])}-#{timestamp}",
         "url" => "https://example.org",
         "description" => "Another test link",
         "group_id" => link["group_id"]

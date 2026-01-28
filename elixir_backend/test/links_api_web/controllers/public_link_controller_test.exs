@@ -6,6 +6,8 @@ defmodule LinksApiWeb.PublicLinkControllerTest do
 
   setup %{conn: conn} do
     # SqliteRepo уже запущен в test_helper.exs
+    # Очищаем базу данных перед каждым тестом
+    SqliteRepo.clear_all_links()
     {:ok, conn: conn}
   end
 

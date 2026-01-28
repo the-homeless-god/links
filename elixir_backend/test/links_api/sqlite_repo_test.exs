@@ -4,7 +4,7 @@ defmodule LinksApi.SqliteRepoTest do
   alias LinksApi.SqliteRepo
 
   defp valid_link_params(name \\ nil) do
-    unique_name = name || "test-link-#{System.unique_integer([:positive])}"
+    unique_name = name || "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
     %{
       "name" => unique_name,
       "url" => "https://example.com",
@@ -19,6 +19,8 @@ defmodule LinksApi.SqliteRepoTest do
 
   setup do
     # SqliteRepo уже запущен в test_helper.exs
+    # Очищаем базу данных перед каждым тестом
+    SqliteRepo.clear_all_links()
     :ok
   end
 
@@ -172,7 +174,7 @@ defmodule LinksApi.SqliteRepoTest do
   describe "get_link_by_name/1" do
     test "returns link by name" do
       name = "get-by-name-#{System.unique_integer([:positive])}"
-      {:ok, created_link} = SqliteRepo.create_link(Map.put(valid_link_params(name), "user_id", @user1_id))
+      {:ok, _created_link} = SqliteRepo.create_link(Map.put(valid_link_params(name), "user_id", @user1_id))
 
       assert {:ok, link} = SqliteRepo.get_link_by_name(name)
       assert link["name"] == name
