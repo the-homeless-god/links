@@ -35,8 +35,9 @@ jobs:
           mix deps.compile
 
       - name: Build release
-        run: |
-          MIX_ENV=prod mix release
+        env:
+          MIX_ENV: prod
+        run: mix release
 
       - name: Create archive
         shell: bash
