@@ -7,6 +7,11 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-01-26
+
+### Исправлено
+- Исправлена ошибка с Windows runner в GitHub Actions (windows-latest -> windows-2022)
+
 ## [0.1.2] - 2025-01-26
 
 ### Изменено
@@ -48,7 +53,8 @@
 - CI/CD через GitHub Actions
 - Документация API
 
-[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/the-homeless-god/links/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/the-homeless-god/links/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/the-homeless-god/links/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/the-homeless-god/links/releases/tag/v0.1.0
