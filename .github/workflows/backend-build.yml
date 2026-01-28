@@ -80,8 +80,10 @@ jobs:
           mix deps.compile
 
       - name: Build release
+        env:
+          MIX_ENV: prod
         run: |
-          MIX_ENV=prod mix release
+          mix release
 
       - name: Create archive
         shell: bash
