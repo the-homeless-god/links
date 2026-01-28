@@ -12,6 +12,7 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
   defp public_link_params(name \\ nil) do
     unique_name = name || "public-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+
     %{
       "name" => unique_name,
       "url" => "https://public.example.com",
@@ -24,6 +25,7 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
   defp private_link_params(name \\ nil) do
     unique_name = name || "private-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+
     %{
       "name" => unique_name,
       "url" => "https://private.example.com",

@@ -5,6 +5,7 @@ defmodule LinksApi.SqliteRepoTest do
 
   defp valid_link_params(name \\ nil) do
     unique_name = name || "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+
     %{
       "name" => unique_name,
       "url" => "https://example.com",

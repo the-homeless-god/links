@@ -59,6 +59,7 @@ defmodule LinksApi.Schemas.Link do
   defp validate_url(changeset, field) do
     validate_change(changeset, field, fn _, url ->
       uri = URI.parse(url)
+
       cond do
         is_nil(uri.scheme) -> [{field, "URL must have a scheme (http, https, etc.)"}]
         is_nil(uri.host) or uri.host == "" -> [{field, "URL must have a host"}]

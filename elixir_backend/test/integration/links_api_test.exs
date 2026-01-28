@@ -12,6 +12,7 @@ defmodule LinksApi.Integration.LinksApiTest do
     # Создаем тестовые данные с уникальными именами
     unique_id = "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
     unique_name = "test-link-#{System.unique_integer([:positive])}-#{:erlang.system_time(:microsecond)}"
+
     test_link = %{
       "id" => unique_id,
       "name" => unique_name,
@@ -52,6 +53,7 @@ defmodule LinksApi.Integration.LinksApiTest do
 
       # Обновляем ссылку
       updated_name = "updated-name-#{System.unique_integer([:positive])}"
+
       updated_data = %{
         "name" => updated_name,
         "description" => "Updated description"
@@ -89,6 +91,7 @@ defmodule LinksApi.Integration.LinksApiTest do
 
       # Создаем ещё одну ссылку в той же группе
       timestamp = :erlang.system_time(:microsecond)
+
       second_link = %{
         "id" => "test-link-#{System.unique_integer([:positive])}-#{timestamp}",
         "name" => "second-test-link-#{System.unique_integer([:positive])}-#{timestamp}",
