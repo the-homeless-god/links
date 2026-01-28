@@ -87,25 +87,15 @@ defmodule LinksApi.SqliteRepo do
         :ok
     end
 
-    # Создаем уникальный индекс по name для предотвращения дублирования
-    create_unique_index_query = """
-    CREATE UNIQUE INDEX IF NOT EXISTS links_name_unique_idx ON links (name);
+    # Удаляем уникальный индекс на name, так как разные пользователи могут иметь ссылки с одинаковыми именами
+    # Уникальность проверяется в коде через get_link_by_name_and_user
+    drop_unique_index_query = """
+    DROP INDEX IF EXISTS links_name_unique_idx;
     """
 
-    case Exqlite.Sqlite3.execute(conn, create_unique_index_query) do
-      :ok ->
-        :ok
-
-      {:error, reason} ->
-        # Если все еще есть дубликаты, логируем и продолжаем без уникального индекса
-        require Logger
-
-        Logger.warning(
-          "Не удалось создать уникальный индекс на name: #{inspect(reason)}. " <>
-            "В базе данных могут быть дубликаты имен."
-        )
-
-        :ok
+    case Exqlite.Sqlite3.execute(conn, drop_unique_index_query) do
+      :ok -> :ok
+      {:error, _} -> :ok
     end
 
     # Добавляем колонку user_id если её нет (для существующих БД)
@@ -150,9 +140,12 @@ defmodule LinksApi.SqliteRepo do
   # API для создания новой ссылки
   @impl true
   def create_link(link_params) do
-    # Проверяем уникальность name перед созданием
+    # Проверяем уникальность name перед созданием (для конкретного user_id)
     if link_params["name"] do
-      case get_link_by_name(link_params["name"]) do
+      user_id = Map.get(link_params, "user_id") || "guest"
+      
+      # Проверяем, существует ли ссылка с таким именем для этого пользователя
+      case get_link_by_name_and_user(link_params["name"], user_id) do
         {:ok, _existing_link} ->
           {:error, :name_already_exists}
 
@@ -160,8 +153,13 @@ defmodule LinksApi.SqliteRepo do
           # name уникален, продолжаем создание
           now = DateTime.utc_now() |> DateTime.to_iso8601()
 
+          # Генерируем ID, если он не передан
+          link_id = Map.get(link_params, "id") || UUID.uuid4()
+
           link =
-            Map.merge(link_params, %{
+            link_params
+            |> Map.put_new("id", link_id)
+            |> Map.merge(%{
               "created_at" => now,
               "updated_at" => now
             })
@@ -188,7 +186,11 @@ defmodule LinksApi.SqliteRepo do
 
           case GenServer.call(__MODULE__, {:execute, query, params}) do
             {:ok, _} ->
-              {:ok, link}
+              # Получаем созданную ссылку из БД, чтобы применить преобразования
+              case get_link(link_id) do
+                {:ok, created_link} -> {:ok, created_link}
+                _ -> {:ok, link}
+              end
 
             {:error, reason} when is_binary(reason) ->
               if String.contains?(reason, "UNIQUE constraint") do
@@ -215,14 +217,16 @@ defmodule LinksApi.SqliteRepo do
     # Получаем существующую ссылку
     case get_link(id) do
       {:ok, existing_link} ->
-        # Проверяем уникальность name, если он изменяется
+        # Проверяем уникальность name, если он изменяется (для конкретного user_id)
         if link_params["name"] && link_params["name"] != existing_link["name"] do
-          case get_link_by_name(link_params["name"]) do
+          user_id = Map.get(existing_link, "user_id") || "guest"
+          
+          case get_link_by_name_and_user(link_params["name"], user_id) do
             {:ok, _existing_link} ->
               {:error, :name_already_exists}
 
             {:error, :not_found} ->
-              # name уникален, продолжаем обновление
+              # name уникален для этого пользователя, продолжаем обновление
               update_link_internal(id, existing_link, link_params)
 
             error ->
@@ -275,11 +279,8 @@ defmodule LinksApi.SqliteRepo do
         {:ok, updated_link}
 
       {:error, reason} when is_binary(reason) ->
-        if String.contains?(reason, "UNIQUE constraint") do
-          {:error, :name_already_exists}
-        else
-          {:error, reason}
-        end
+        # Игнорируем UNIQUE constraint, так как проверка уникальности делается в коде
+        {:error, reason}
 
       error ->
         error
@@ -303,6 +304,18 @@ defmodule LinksApi.SqliteRepo do
   def get_link_by_name(name) do
     query = "SELECT * FROM links WHERE name = ? LIMIT 1"
     params = [name]
+
+    case GenServer.call(__MODULE__, {:query, query, params}) do
+      {:ok, []} -> {:error, :not_found}
+      {:ok, [row]} -> {:ok, row_to_map(row)}
+      error -> error
+    end
+  end
+
+  # API для получения ссылки по name и user_id (для проверки уникальности)
+  defp get_link_by_name_and_user(name, user_id) do
+    query = "SELECT * FROM links WHERE name = ? AND user_id = ? LIMIT 1"
+    params = [name, user_id]
 
     case GenServer.call(__MODULE__, {:query, query, params}) do
       {:ok, []} -> {:error, :not_found}
@@ -376,6 +389,13 @@ defmodule LinksApi.SqliteRepo do
     params = [id]
 
     GenServer.call(__MODULE__, {:execute, query, params})
+    :ok
+  end
+
+  # Функция для очистки всех ссылок (используется в тестах)
+  def clear_all_links do
+    query = "DELETE FROM links"
+    GenServer.call(__MODULE__, {:execute, query, []})
     :ok
   end
 
@@ -460,11 +480,20 @@ defmodule LinksApi.SqliteRepo do
 
     # Преобразуем is_public из integer в boolean
     row =
-      Map.update(row, "is_public", false, fn
-        1 -> true
-        0 -> false
-        val -> val
-      end)
+      case Map.get(row, "is_public") do
+        1 -> Map.put(row, "is_public", true)
+        0 -> Map.put(row, "is_public", false)
+        nil -> Map.put(row, "is_public", false)
+        val -> Map.put(row, "is_public", val)
+      end
+
+    # Убеждаемся, что user_id не nil (должен быть "guest" по умолчанию)
+    row =
+      if Map.get(row, "user_id") == nil do
+        Map.put(row, "user_id", "guest")
+      else
+        row
+      end
 
     # Преобразуем ISO8601 строки в DateTime
     row =
