@@ -3,8 +3,7 @@ import Config
 
 # Базовая конфигурация
 config :links_api,
-  namespace: LinksApi,
-  ecto_repos: [LinksApi.Repo]
+  namespace: LinksApi
 
 # Настройки для приложения Phoenix
 config :links_api, LinksApiWeb.Endpoint,

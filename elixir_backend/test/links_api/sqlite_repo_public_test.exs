@@ -4,43 +4,50 @@ defmodule LinksApi.SqliteRepoPublicTest do
   alias LinksApi.SqliteRepo
 
   setup do
-    # Запускаем репозиторий для тестов
-    start_supervised!({LinksApi.SqliteRepo, []})
+    # SqliteRepo уже запущен в test_helper.exs
     :ok
   end
 
-  @public_link_params %{
-    "name" => "public-link",
-    "url" => "https://public.example.com",
-    "description" => "Public link",
-    "group_id" => "",
-    "user_id" => "user1",
-    "is_public" => true
-  }
+  defp public_link_params(name \\ nil) do
+    unique_name = name || "public-link-#{System.unique_integer([:positive])}"
+    %{
+      "name" => unique_name,
+      "url" => "https://public.example.com",
+      "description" => "Public link",
+      "group_id" => "",
+      "user_id" => "user1",
+      "is_public" => true
+    }
+  end
 
-  @private_link_params %{
-    "name" => "private-link",
-    "url" => "https://private.example.com",
-    "description" => "Private link",
-    "group_id" => "",
-    "user_id" => "user1",
-    "is_public" => false
-  }
+  defp private_link_params(name \\ nil) do
+    unique_name = name || "private-link-#{System.unique_integer([:positive])}"
+    %{
+      "name" => unique_name,
+      "url" => "https://private.example.com",
+      "description" => "Private link",
+      "group_id" => "",
+      "user_id" => "user1",
+      "is_public" => false
+    }
+  end
 
   describe "get_public_link_by_name/1" do
     test "returns public link by name" do
-      {:ok, created_link} = SqliteRepo.create_link(@public_link_params)
+      params = public_link_params()
+      {:ok, _created_link} = SqliteRepo.create_link(params)
 
-      assert {:ok, link} = SqliteRepo.get_public_link_by_name(@public_link_params["name"])
-      assert link["name"] == @public_link_params["name"]
+      assert {:ok, link} = SqliteRepo.get_public_link_by_name(params["name"])
+      assert link["name"] == params["name"]
       assert link["is_public"] == true
-      assert link["url"] == @public_link_params["url"]
+      assert link["url"] == params["url"]
     end
 
     test "returns error for private link" do
-      {:ok, _link} = SqliteRepo.create_link(@private_link_params)
+      params = private_link_params()
+      {:ok, _link} = SqliteRepo.create_link(params)
 
-      assert {:error, :not_found} = SqliteRepo.get_public_link_by_name(@private_link_params["name"])
+      assert {:error, :not_found} = SqliteRepo.get_public_link_by_name(params["name"])
     end
 
     test "returns error for non-existent link" do
@@ -49,46 +56,49 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
     test "only returns links with is_public = 1" do
       # Создаем публичную ссылку
-      {:ok, _public_link} = SqliteRepo.create_link(@public_link_params)
+      public_params = public_link_params()
+      {:ok, _public_link} = SqliteRepo.create_link(public_params)
 
-      # Создаем приватную ссылку с тем же именем (но это невозможно из-за уникальности name)
-      # Вместо этого создадим приватную ссылку с другим именем
-      {:ok, _private_link} = SqliteRepo.create_link(Map.put(@private_link_params, "name", "different-name"))
+      # Создаем приватную ссылку с другим именем
+      private_params = private_link_params()
+      {:ok, _private_link} = SqliteRepo.create_link(private_params)
 
       # Публичная ссылка должна быть найдена
-      assert {:ok, link} = SqliteRepo.get_public_link_by_name(@public_link_params["name"])
+      assert {:ok, link} = SqliteRepo.get_public_link_by_name(public_params["name"])
       assert link["is_public"] == true
 
       # Приватная ссылка не должна быть найдена через get_public_link_by_name
-      assert {:error, :not_found} = SqliteRepo.get_public_link_by_name("different-name")
+      assert {:error, :not_found} = SqliteRepo.get_public_link_by_name(private_params["name"])
     end
   end
 
   describe "create_link/1 with is_public" do
     test "creates public link with is_public = true" do
-      assert {:ok, link} = SqliteRepo.create_link(@public_link_params)
+      params = public_link_params()
+      assert {:ok, link} = SqliteRepo.create_link(params)
       assert link["is_public"] == true
     end
 
     test "creates private link with is_public = false" do
-      assert {:ok, link} = SqliteRepo.create_link(@private_link_params)
+      params = private_link_params()
+      assert {:ok, link} = SqliteRepo.create_link(params)
       assert link["is_public"] == false
     end
 
     test "defaults to false when is_public not specified" do
-      params = Map.drop(@public_link_params, ["is_public"])
+      params = public_link_params() |> Map.drop(["is_public"])
       assert {:ok, link} = SqliteRepo.create_link(params)
       assert link["is_public"] == false
     end
 
     test "handles is_public as integer 1" do
-      params = Map.put(@public_link_params, "is_public", 1)
+      params = public_link_params() |> Map.put("is_public", 1)
       assert {:ok, link} = SqliteRepo.create_link(params)
       assert link["is_public"] == true
     end
 
     test "handles is_public as integer 0" do
-      params = Map.put(@private_link_params, "is_public", 0)
+      params = private_link_params() |> Map.put("is_public", 0)
       assert {:ok, link} = SqliteRepo.create_link(params)
       assert link["is_public"] == false
     end
@@ -96,7 +106,8 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
   describe "update_link/2 with is_public" do
     test "updates is_public field" do
-      {:ok, link} = SqliteRepo.create_link(@private_link_params)
+      params = private_link_params()
+      {:ok, link} = SqliteRepo.create_link(params)
 
       update_params = %{"is_public" => true}
 
@@ -105,7 +116,8 @@ defmodule LinksApi.SqliteRepoPublicTest do
     end
 
     test "can change from public to private" do
-      {:ok, link} = SqliteRepo.create_link(@public_link_params)
+      params = public_link_params()
+      {:ok, link} = SqliteRepo.create_link(params)
 
       update_params = %{"is_public" => false}
 
@@ -114,7 +126,8 @@ defmodule LinksApi.SqliteRepoPublicTest do
     end
 
     test "preserves is_public when not specified in update" do
-      {:ok, link} = SqliteRepo.create_link(@public_link_params)
+      params = public_link_params()
+      {:ok, link} = SqliteRepo.create_link(params)
 
       update_params = %{"description" => "Updated description"}
 
@@ -126,13 +139,15 @@ defmodule LinksApi.SqliteRepoPublicTest do
 
   describe "row_to_map converts is_public correctly" do
     test "converts integer 1 to boolean true" do
-      {:ok, link} = SqliteRepo.create_link(@public_link_params)
+      params = public_link_params()
+      {:ok, link} = SqliteRepo.create_link(params)
       # Проверяем, что is_public правильно преобразован
       assert link["is_public"] == true
     end
 
     test "converts integer 0 to boolean false" do
-      {:ok, link} = SqliteRepo.create_link(@private_link_params)
+      params = private_link_params()
+      {:ok, link} = SqliteRepo.create_link(params)
       # Проверяем, что is_public правильно преобразован
       assert link["is_public"] == false
     end

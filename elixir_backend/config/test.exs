@@ -9,7 +9,7 @@ config :links_api, LinksApiWeb.Endpoint,
 config :links_api, :repo_module, LinksApi.SqliteRepo
 
 # Отключаем логирование в тестах
-config :logger, level: :warn
+config :logger, level: :warning, backends: [:console]
 
 # Отключаем настройку Keycloak в тестах
 config :links_api, :setup_keycloak, false

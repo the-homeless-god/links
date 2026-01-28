@@ -6,27 +6,18 @@ defmodule LinksApi.Integration.LinksApiTest do
   Требует запущенную Cassandra и систему.
   """
 
-  alias LinksApi.Repo
+  alias LinksApi.SqliteRepo
 
   setup do
-    # Очистка таблицы ссылок перед каждым тестом
-    # (В реальном проекте лучше использовать тестовую базу данных)
-    # Repo.clear_links_for_test()
-
-    # Создаем тестовые данные
+    # Создаем тестовые данные с уникальными именами
+    unique_name = "test-link-#{System.unique_integer([:positive])}"
     test_link = %{
       "id" => "test-link-#{System.unique_integer([:positive])}",
-      "name" => "Test Link",
+      "name" => unique_name,
       "url" => "https://example.com",
       "description" => "Test link for integration testing",
       "group_id" => "test-group"
     }
-
-    # Очищаем после теста
-    on_exit(fn ->
-      # Repo.delete_link(test_link["id"])
-      :ok
-    end)
 
     {:ok, %{test_link: test_link}}
   end
@@ -34,7 +25,7 @@ defmodule LinksApi.Integration.LinksApiTest do
   describe "Link API" do
     test "create and retrieve a link", %{test_link: link} do
       # Создаем ссылку
-      {:ok, created_link} = Repo.create_link(link)
+      {:ok, created_link} = SqliteRepo.create_link(link)
 
       # Проверяем, что ссылка создана с правильными данными
       assert created_link["id"] == link["id"]
@@ -42,7 +33,7 @@ defmodule LinksApi.Integration.LinksApiTest do
       assert created_link["url"] == link["url"]
 
       # Получаем ссылку и проверяем данные
-      {:ok, retrieved_link} = Repo.get_link(link["id"])
+      {:ok, retrieved_link} = SqliteRepo.get_link(link["id"])
       assert retrieved_link["id"] == link["id"]
       assert retrieved_link["name"] == link["name"]
       assert retrieved_link["url"] == link["url"]
@@ -56,57 +47,58 @@ defmodule LinksApi.Integration.LinksApiTest do
 
     test "update a link", %{test_link: link} do
       # Создаем ссылку
-      {:ok, _created_link} = Repo.create_link(link)
+      {:ok, _created_link} = SqliteRepo.create_link(link)
 
       # Обновляем ссылку
+      updated_name = "updated-name-#{System.unique_integer([:positive])}"
       updated_data = %{
-        "name" => "Updated Name",
+        "name" => updated_name,
         "description" => "Updated description"
       }
 
-      {:ok, updated_link} = Repo.update_link(link["id"], updated_data)
+      {:ok, updated_link} = SqliteRepo.update_link(link["id"], updated_data)
 
       # Проверяем, что изменения сохранены
       assert updated_link["id"] == link["id"]
-      assert updated_link["name"] == "Updated Name"
+      assert updated_link["name"] == updated_name
       assert updated_link["description"] == "Updated description"
       # Не изменилось
       assert updated_link["url"] == link["url"]
 
       # Получаем ссылку и проверяем обновленные данные
-      {:ok, retrieved_link} = Repo.get_link(link["id"])
-      assert retrieved_link["name"] == "Updated Name"
+      {:ok, retrieved_link} = SqliteRepo.get_link(link["id"])
+      assert retrieved_link["name"] == updated_name
       assert retrieved_link["description"] == "Updated description"
     end
 
     test "delete a link", %{test_link: link} do
       # Создаем ссылку
-      {:ok, _created_link} = Repo.create_link(link)
+      {:ok, _created_link} = SqliteRepo.create_link(link)
 
       # Удаляем ссылку
-      :ok = Repo.delete_link(link["id"])
+      :ok = SqliteRepo.delete_link(link["id"])
 
       # Проверяем, что ссылка удалена
-      assert {:error, :not_found} = Repo.get_link(link["id"])
+      assert {:error, :not_found} = SqliteRepo.get_link(link["id"])
     end
 
     test "get links by group", %{test_link: link} do
       # Создаем ссылку
-      {:ok, _created_link} = Repo.create_link(link)
+      {:ok, _created_link} = SqliteRepo.create_link(link)
 
       # Создаем ещё одну ссылку в той же группе
       second_link = %{
         "id" => "test-link-#{System.unique_integer([:positive])}",
-        "name" => "Second Test Link",
+        "name" => "second-test-link-#{System.unique_integer([:positive])}",
         "url" => "https://example.org",
         "description" => "Another test link",
         "group_id" => link["group_id"]
       }
 
-      {:ok, _second_created} = Repo.create_link(second_link)
+      {:ok, _second_created} = SqliteRepo.create_link(second_link)
 
       # Получаем ссылки по группе
-      {:ok, links_by_group} = Repo.get_links_by_group(link["group_id"])
+      {:ok, links_by_group} = SqliteRepo.get_links_by_group(link["group_id"])
 
       # Проверяем, что обе ссылки найдены
       assert Enum.count(links_by_group) >= 2
@@ -117,7 +109,7 @@ defmodule LinksApi.Integration.LinksApiTest do
       assert second_link["id"] in link_ids
 
       # Очистка
-      Repo.delete_link(second_link["id"])
+      SqliteRepo.delete_link(second_link["id"])
     end
   end
 end

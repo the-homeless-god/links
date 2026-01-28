@@ -1,7 +1,6 @@
 defmodule LinksApiWeb.LinkController do
   use Phoenix.Controller
   alias LinksApi.SqliteRepo
-  alias LinksApiWeb.AuthPlug
 
   # Получение всех ссылок
   def index(conn, _params) do

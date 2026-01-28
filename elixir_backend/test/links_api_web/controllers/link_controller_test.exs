@@ -5,17 +5,19 @@ defmodule LinksApiWeb.LinkControllerTest do
   alias LinksApi.SqliteRepo
 
   setup do
-    # Запускаем репозиторий для тестов
-    start_supervised!({LinksApi.SqliteRepo, []})
+    # SqliteRepo уже запущен в test_helper.exs
     :ok
   end
 
-  @valid_link_params %{
-    "name" => "test-link",
-    "url" => "https://example.com",
-    "description" => "Test description",
-    "group_id" => "test-group"
-  }
+  defp valid_link_params(name \\ nil) do
+    unique_name = name || "test-link-#{System.unique_integer([:positive])}"
+    %{
+      "name" => unique_name,
+      "url" => "https://example.com",
+      "description" => "Test description",
+      "group_id" => "test-group"
+    }
+  end
 
   @user1_id "user1"
   @user2_id "user2"
@@ -24,13 +26,13 @@ defmodule LinksApiWeb.LinkControllerTest do
   describe "index/2" do
     test "returns only links for authenticated user" do
       # Создаем ссылки для разных пользователей
-      {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, _link1} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       {:ok, _link2} =
-        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
+        SqliteRepo.create_link(valid_link_params() |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       {:ok, _link3} =
-        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-3") |> Map.put("user_id", @user2_id))
+        SqliteRepo.create_link(valid_link_params() |> Map.put("name", "test-link-3") |> Map.put("user_id", @user2_id))
 
       # Создаем conn с assigns
       conn =
@@ -50,7 +52,7 @@ defmodule LinksApiWeb.LinkControllerTest do
 
     test "returns empty list when user has no links" do
       # Создаем ссылку для другого пользователя
-      {:ok, _link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user2_id))
+      {:ok, _link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user2_id))
 
       conn =
         Plug.Test.conn(:get, "/api/links")
@@ -66,10 +68,10 @@ defmodule LinksApiWeb.LinkControllerTest do
 
     test "guest user sees only guest links" do
       # Создаем ссылки для guest и обычного пользователя
-      {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @guest_id))
+      {:ok, _link1} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @guest_id))
 
       {:ok, _link2} =
-        SqliteRepo.create_link(@valid_link_params |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
+        SqliteRepo.create_link(valid_link_params() |> Map.put("name", "test-link-2") |> Map.put("user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:get, "/api/links")
@@ -91,13 +93,13 @@ defmodule LinksApiWeb.LinkControllerTest do
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @user1_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
-        |> Map.put(:body_params, @valid_link_params)
+        |> Map.put(:body_params, valid_link_params())
 
-      result = LinkController.create(conn, %{})
+      result = LinksApiWeb.LinkController.create(conn, %{})
 
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
-      assert link["name"] == @valid_link_params["name"]
+      assert link["name"] == valid_link_params()["name"]
       assert link["user_id"] == @user1_id
     end
 
@@ -106,9 +108,9 @@ defmodule LinksApiWeb.LinkControllerTest do
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @guest_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @guest_id})
-        |> Map.put(:body_params, @valid_link_params)
+        |> Map.put(:body_params, valid_link_params())
 
-      result = LinkController.create(conn, %{})
+      result = LinksApiWeb.LinkController.create(conn, %{})
 
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
@@ -117,15 +119,15 @@ defmodule LinksApiWeb.LinkControllerTest do
 
     test "returns error when name already exists for same user" do
       # Создаем ссылку с именем
-      {:ok, _existing} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, _existing} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @user1_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
-        |> Map.put(:body_params, @valid_link_params)
+        |> Map.put(:body_params, valid_link_params())
 
-      result = LinkController.create(conn, %{})
+      result = LinksApiWeb.LinkController.create(conn, %{})
 
       assert result.status == 422
       error = Jason.decode!(result.resp_body)
@@ -134,28 +136,28 @@ defmodule LinksApiWeb.LinkControllerTest do
 
     test "allows same name for different users" do
       # Создаем ссылку для user1
-      {:ok, _link1} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, _link1} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       # Пытаемся создать ссылку с тем же именем для user2
       conn =
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @user2_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
-        |> Map.put(:body_params, @valid_link_params)
+        |> Map.put(:body_params, valid_link_params())
 
-      result = LinkController.create(conn, %{})
+      result = LinksApiWeb.LinkController.create(conn, %{})
 
       # Должно быть успешно, так как это другой пользователь
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
-      assert link["name"] == @valid_link_params["name"]
+      assert link["name"] == valid_link_params()["name"]
       assert link["user_id"] == @user2_id
     end
   end
 
   describe "update/2" do
     test "updates link belonging to user" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       update_params = %{"name" => "updated-name", "url" => "https://updated.com"}
 
@@ -175,7 +177,7 @@ defmodule LinksApiWeb.LinkControllerTest do
     end
 
     test "returns 403 when trying to update another user's link" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       update_params = %{"name" => "updated-name"}
 
@@ -208,7 +210,7 @@ defmodule LinksApiWeb.LinkControllerTest do
 
   describe "delete/2" do
     test "deletes link belonging to user" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:delete, "/api/links/#{link["id"]}")
@@ -224,7 +226,7 @@ defmodule LinksApiWeb.LinkControllerTest do
     end
 
     test "returns 403 when trying to delete another user's link" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:delete, "/api/links/#{link["id"]}")
@@ -256,7 +258,7 @@ defmodule LinksApiWeb.LinkControllerTest do
 
   describe "show/2" do
     test "returns link by id" do
-      {:ok, link} = SqliteRepo.create_link(Map.put(@valid_link_params, "user_id", @user1_id))
+      {:ok, link} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
 
       conn = Plug.Test.conn(:get, "/api/links/#{link["id"]}")
 

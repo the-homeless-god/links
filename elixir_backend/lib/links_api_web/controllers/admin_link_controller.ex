@@ -1,6 +1,5 @@
 defmodule LinksApiWeb.AdminLinkController do
   use Phoenix.Controller
-  alias LinksApi.Schemas.Link
   alias LinksApi.SqliteRepo
 
   def index(conn, _params) do
@@ -40,7 +39,7 @@ defmodule LinksApiWeb.AdminLinkController do
   end
 
   # Добавляем обработку формата Backpex
-  def create(conn, %{"change" => change_params} = params) do
+  def create(conn, %{"change" => change_params}) do
     # Генерируем UUID для новой ссылки, если он не указан
     link_params_with_id = Map.put_new(change_params, "id", UUID.uuid4())
 

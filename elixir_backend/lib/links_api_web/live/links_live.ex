@@ -14,7 +14,6 @@ defmodule LinksApiWeb.LinksLive do
 
   alias LinksApi.Auth.KeycloakToken
   alias LinksApi.Schemas.Link
-  alias LinksApiWeb.Router.Helpers, as: Routes
   alias Elixir.UUID
   import Phoenix.Component
 
@@ -259,7 +258,7 @@ defmodule LinksApiWeb.LinksLive do
   end
 
   # Helper для получения списка групп для выбора
-  defp get_group_options(socket) do
+  defp _get_group_options(socket) do
     # Безопасное получение current_user
     current_user =
       try do

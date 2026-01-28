@@ -1,5 +1,10 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(LinksApi.Repo, :manual)
+
+# Запускаем SqliteRepo для тестов, которые используют реальный репозиторий
+case LinksApi.SqliteRepo.start_link([]) do
+  {:ok, _} -> :ok
+  {:error, {:already_started, _}} -> :ok
+end
 
 # Определяем моки для тестирования
 Mox.defmock(LinksApi.MockRepo, for: LinksApi.Repo.Behaviour)
