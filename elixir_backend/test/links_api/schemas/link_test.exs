@@ -44,7 +44,11 @@ defmodule LinksApi.Schemas.LinkTest do
       assert "URL must have a scheme (http, https, etc.)" in errors_on(changeset).url
 
       # Некорректный URL без хоста
-      attrs = %{url: "http://"}
+      attrs = %{
+        id: "test-link-1",
+        name: "Test Link",
+        url: "http://"
+      }
       changeset = Link.changeset(%Link{}, attrs)
       refute changeset.valid?
       assert "URL must have a host" in errors_on(changeset).url

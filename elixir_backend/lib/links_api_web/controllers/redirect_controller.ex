@@ -64,10 +64,24 @@ defmodule LinksApiWeb.RedirectController do
         # Логируем неудачный редирект
         Logger.warning("Link not found for redirect by name", name: name)
 
+        html_content = """
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>404 - Not Found</title>
+            <meta charset="utf-8" />
+          </head>
+          <body>
+            <h1>404 - Not Found</h1>
+            <p>The page you are looking for does not exist.</p>
+          </body>
+        </html>
+        """
+
         conn
+        |> put_resp_content_type("text/html")
         |> put_status(:not_found)
-        |> put_view(LinksApiWeb.ErrorHTML)
-        |> render("404.html")
+        |> send_resp(404, html_content)
 
       error ->
         # Логируем ошибку
@@ -76,10 +90,24 @@ defmodule LinksApiWeb.RedirectController do
           error: inspect(error)
         )
 
+        html_content = """
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>500 - Internal Server Error</title>
+            <meta charset="utf-8" />
+          </head>
+          <body>
+            <h1>500 - Internal Server Error</h1>
+            <p>An error occurred while processing your request.</p>
+          </body>
+        </html>
+        """
+
         conn
+        |> put_resp_content_type("text/html")
         |> put_status(:internal_server_error)
-        |> put_view(LinksApiWeb.ErrorHTML)
-        |> render("500.html")
+        |> send_resp(500, html_content)
     end
   end
 
@@ -104,9 +132,23 @@ defmodule LinksApiWeb.RedirectController do
 
   def redirect_to_dashboard(conn, _params) do
     # Дашборд временно отключен из-за проблем с перезагрузкой
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>404 - Not Found</title>
+        <meta charset="utf-8" />
+      </head>
+      <body>
+        <h1>404 - Not Found</h1>
+        <p>The page you are looking for does not exist.</p>
+      </body>
+    </html>
+    """
+
     conn
+    |> put_resp_content_type("text/html")
     |> put_status(:not_found)
-    |> put_view(LinksApiWeb.ErrorHTML)
-    |> render("404.html")
+    |> send_resp(404, html_content)
   end
 end

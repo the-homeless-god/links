@@ -41,7 +41,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
 
       # Вызываем контроллер напрямую
-      result = LinkController.index(conn, %{})
+      result = LinksApiWeb.LinkController.index(conn, %{})
 
       # Проверяем, что вернулись только ссылки user1
       assert result.status == 200
@@ -59,7 +59,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:user_id, @user1_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
 
-      result = LinkController.index(conn, %{})
+      result = LinksApiWeb.LinkController.index(conn, %{})
 
       assert result.status == 200
       links = Jason.decode!(result.resp_body)
@@ -78,7 +78,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:user_id, @guest_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @guest_id})
 
-      result = LinkController.index(conn, %{})
+      result = LinksApiWeb.LinkController.index(conn, %{})
 
       assert result.status == 200
       links = Jason.decode!(result.resp_body)
@@ -97,9 +97,10 @@ defmodule LinksApiWeb.LinkControllerTest do
 
       result = LinksApiWeb.LinkController.create(conn, %{})
 
+      params = valid_link_params()
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
-      assert link["name"] == valid_link_params()["name"]
+      assert link["name"] == params["name"]
       assert link["user_id"] == @user1_id
     end
 
@@ -119,13 +120,15 @@ defmodule LinksApiWeb.LinkControllerTest do
 
     test "returns error when name already exists for same user" do
       # Создаем ссылку с именем
-      {:ok, _existing} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
+      name = "duplicate-name-#{System.unique_integer([:positive])}"
+      params = valid_link_params(name)
+      {:ok, _existing} = SqliteRepo.create_link(Map.put(params, "user_id", @user1_id))
 
       conn =
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @user1_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
-        |> Map.put(:body_params, valid_link_params())
+        |> Map.put(:body_params, params)
 
       result = LinksApiWeb.LinkController.create(conn, %{})
 
@@ -135,22 +138,24 @@ defmodule LinksApiWeb.LinkControllerTest do
     end
 
     test "allows same name for different users" do
-      # Создаем ссылку для user1
-      {:ok, _link1} = SqliteRepo.create_link(Map.put(valid_link_params(), "user_id", @user1_id))
+      # Создаем ссылку для user1 с определенным именем
+      name = "shared-name-#{System.unique_integer([:positive])}"
+      params = valid_link_params(name)
+      {:ok, _link1} = SqliteRepo.create_link(Map.put(params, "user_id", @user1_id))
 
       # Пытаемся создать ссылку с тем же именем для user2
       conn =
         Plug.Test.conn(:post, "/api/links")
         |> Plug.Conn.assign(:user_id, @user2_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
-        |> Map.put(:body_params, valid_link_params())
+        |> Map.put(:body_params, params)
 
       result = LinksApiWeb.LinkController.create(conn, %{})
 
       # Должно быть успешно, так как это другой пользователь
       assert result.status == 201
       link = Jason.decode!(result.resp_body)
-      assert link["name"] == valid_link_params()["name"]
+      assert link["name"] == name
       assert link["user_id"] == @user2_id
     end
   end
@@ -167,7 +172,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
         |> Map.put(:body_params, update_params)
 
-      result = LinkController.update(conn, %{"id" => link["id"]})
+      result = LinksApiWeb.LinkController.update(conn, %{"id" => link["id"]})
 
       assert result.status == 200
       updated_link = Jason.decode!(result.resp_body)
@@ -188,7 +193,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
         |> Map.put(:body_params, update_params)
 
-      result = LinkController.update(conn, %{"id" => link["id"]})
+      result = LinksApiWeb.LinkController.update(conn, %{"id" => link["id"]})
 
       assert result.status == 403
       error = Jason.decode!(result.resp_body)
@@ -217,7 +222,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:user_id, @user1_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user1_id})
 
-      result = LinkController.delete(conn, %{"id" => link["id"]})
+      result = LinksApiWeb.LinkController.delete(conn, %{"id" => link["id"]})
 
       assert result.status == 204
 
@@ -234,7 +239,7 @@ defmodule LinksApiWeb.LinkControllerTest do
         |> Plug.Conn.assign(:user_id, @user2_id)
         |> Plug.Conn.assign(:current_user, %{"sub" => @user2_id})
 
-      result = LinkController.delete(conn, %{"id" => link["id"]})
+      result = LinksApiWeb.LinkController.delete(conn, %{"id" => link["id"]})
 
       assert result.status == 403
       error = Jason.decode!(result.resp_body)
@@ -262,7 +267,7 @@ defmodule LinksApiWeb.LinkControllerTest do
 
       conn = Plug.Test.conn(:get, "/api/links/#{link["id"]}")
 
-      result = LinkController.show(conn, %{"id" => link["id"]})
+      result = LinksApiWeb.LinkController.show(conn, %{"id" => link["id"]})
 
       assert result.status == 200
       returned_link = Jason.decode!(result.resp_body)
