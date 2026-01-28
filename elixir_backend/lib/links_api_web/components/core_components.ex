@@ -10,7 +10,7 @@ defmodule LinksApiWeb.CoreComponents do
   attr(:kind, :atom, values: [:info, :error], doc: "used for styling")
   attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
 
-  def flash(%{kind: kind} = assigns) do
+  def flash(%{kind: _kind} = assigns) do
     ~H"""
     <div
       :if={msg = @flash[@kind]}
@@ -64,7 +64,7 @@ defmodule LinksApiWeb.CoreComponents do
     """
   end
 
-  defp hide_flash(js \\ %JS{}) do
+  defp hide_flash(js) do
     js
     |> JS.hide(to: "#flash", transition: "fade-out")
     |> JS.hide(to: "#flash-info", transition: "fade-out-scale")

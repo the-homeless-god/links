@@ -2,6 +2,7 @@ defmodule LinksApiWeb.RedirectControllerTest do
   use LinksApiWeb.ConnCase, async: true
 
   import Mox
+  import LinksApiWeb.Layouts, only: [sigil_p: 2]
 
   # Настройка mock для Repo
   setup do
@@ -61,13 +62,6 @@ defmodule LinksApiWeb.RedirectControllerTest do
     end
   end
 
-  describe "admin_redirect/2" do
-    test "redirects to admin links page", %{conn: conn} do
-      # Выполняем запрос на редирект
-      conn = get(conn, ~p"/admin")
-
-      # Проверяем, что произошел редирект на страницу админки
-      assert redirected_to(conn, 302) == "/admin/links"
-    end
-  end
+  # Тест для admin_redirect удален, так как маршрут /admin не определен в router
+  # Админка отключена согласно router.ex
 end

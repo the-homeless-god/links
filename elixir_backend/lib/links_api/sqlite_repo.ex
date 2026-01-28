@@ -424,7 +424,7 @@ defmodule LinksApi.SqliteRepo do
   end
 
   # Привязка параметров к запросу
-  defp bind_params(_conn, statement, []) do
+  defp bind_params(_conn, _statement, []) do
     :ok
   end
 

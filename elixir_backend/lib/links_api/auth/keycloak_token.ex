@@ -60,9 +60,6 @@ defmodule LinksApi.Auth.KeycloakToken do
     end
   end
 
-  @doc """
-  Создание realm в Keycloak.
-  """
   defp create_realm(token) do
     url = "#{@keycloak_url}/auth/admin/realms"
 
@@ -76,7 +73,7 @@ defmodule LinksApi.Auth.KeycloakToken do
       "enabled" => true,
       "registrationAllowed" => true,
       # 24 часа
-      "accessTokenLifespan" => 86400,
+      "accessTokenLifespan" => 86_400,
       "sslRequired" => "external"
     }
 
@@ -95,9 +92,6 @@ defmodule LinksApi.Auth.KeycloakToken do
     end
   end
 
-  @doc """
-  Создание клиента в Keycloak.
-  """
   defp create_client(token) do
     url = "#{@keycloak_url}/auth/admin/realms/#{@realm_name}/clients"
 
@@ -133,9 +127,6 @@ defmodule LinksApi.Auth.KeycloakToken do
     end
   end
 
-  @doc """
-  Создание ролей в Keycloak.
-  """
   defp create_roles(token) do
     roles = ["admin", "user"]
 
@@ -200,15 +191,12 @@ defmodule LinksApi.Auth.KeycloakToken do
   @doc """
   Проверяет токен и возвращает claims.
   """
-  def verify_token(token) do
+  def verify_token(_token) do
     # Упрощенная проверка токена - в реальном приложении нужно использовать Joken
     # Для тестирования просто возвращаем успех
     {:ok, %{"sub" => "test_user", "roles" => ["links-admin"]}}
   end
 
-  @doc """
-  Создание одной роли в Keycloak.
-  """
   defp create_role(token, role_name) do
     url = "#{@keycloak_url}/auth/admin/realms/#{@realm_name}/roles"
 
@@ -306,7 +294,7 @@ defmodule LinksApi.Auth.JwksStrategy do
   end
 
   # Декодирование ключа из формата JWK в PEM
-  defp decode_key(jwk) do
+  defp decode_key(_jwk) do
     # В реальном приложении здесь должен быть код для преобразования JWK в PEM
     # Для упрощения примера возвращаем заглушку
     {:ok, "PUBLIC KEY IN PEM FORMAT"}

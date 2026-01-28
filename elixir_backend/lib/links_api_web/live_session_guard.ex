@@ -3,8 +3,6 @@ defmodule LinksApiWeb.LiveSessionGuard do
   Модуль для проверки аутентификации в LiveView сессиях.
   """
   import Phoenix.Component
-  import Phoenix.LiveView
-  alias LinksApi.Auth.KeycloakToken
 
   # Проверка аутентификации для LiveView - временно отключена для тестирования
   def on_mount(:auth, _params, _session, socket) do
@@ -29,6 +27,6 @@ defmodule LinksApiWeb.LiveSessionGuard do
         })
       end
 
-    {:cont, nil}
+    {:cont, socket}
   end
 end

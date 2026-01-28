@@ -88,7 +88,7 @@ defmodule LinksApi.RepoAdapter do
   end
 
   # Подсчет количества записей
-  def count(criteria, _params, live_resource) do
+  def count(criteria, _params, _live_resource) do
     {:ok, links} = repo_module().get_all_links()
 
     # Получаем фильтры
