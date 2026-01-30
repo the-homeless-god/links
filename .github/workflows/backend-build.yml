@@ -88,13 +88,15 @@ jobs:
       - name: Rename archive
         shell: bash
         run: |
+          ARCHIVE=$(ls _build/prod/links_api-*.tar.gz | head -1)
           if [ "$RUNNER_OS" == "Linux" ]; then
-            cp _build/prod/links_api-*.tar.gz links-api-linux.tar.gz
+            cp "$ARCHIVE" links-api-linux.tar.gz
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            cp _build/prod/links_api-*.tar.gz links-api-macos.tar.gz
+            cp "$ARCHIVE" links-api-macos.tar.gz
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            cp _build/prod/links_api-*.tar.gz links-api-windows.tar.gz
+            cp "$ARCHIVE" links-api-windows.tar.gz
           fi
+          ls -la links-api-*.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
