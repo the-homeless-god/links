@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+## [0.1.6] - 2025-01-26
+
+### Исправлено
+- Исправлен путь к артефактам (elixir_backend/links-api-*.tar.gz) для корректной работы с working-directory
+- Исправлен токен на secrets.GITHUB_TOKEN в backend-release.yml
+- Добавлена расширенная отладка для диагностики проблем с архивами
+
 ## [0.1.5] - 2025-01-26
 
 ### Исправлено
@@ -66,7 +73,8 @@
 - CI/CD через GitHub Actions
 - Документация API
 
-[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/the-homeless-god/links/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/the-homeless-god/links/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/the-homeless-god/links/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/the-homeless-god/links/compare/v0.1.2...v0.1.3
