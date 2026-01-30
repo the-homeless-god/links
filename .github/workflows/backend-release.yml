@@ -39,15 +39,15 @@ jobs:
           MIX_ENV: prod
         run: mix release
 
-      - name: Create archive
+      - name: Rename archive
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            tar -czf links-api-linux.tar.gz _build/prod/rel/links_api
+            cp _build/prod/links_api-*.tar.gz links-api-linux.tar.gz
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            tar -czf links-api-macos.tar.gz _build/prod/rel/links_api
+            cp _build/prod/links_api-*.tar.gz links-api-macos.tar.gz
           elif [ "$RUNNER_OS" == "Windows" ]; then
-            tar -czf links-api-windows.tar.gz _build/prod/rel/links_api
+            cp _build/prod/links_api-*.tar.gz links-api-windows.tar.gz
           fi
 
       - name: Upload artifact
