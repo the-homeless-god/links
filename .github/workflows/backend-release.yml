@@ -43,6 +43,7 @@ jobs:
         shell: bash
         run: |
           ARCHIVE=$(ls _build/prod/links_api-*.tar.gz | head -1)
+          echo "Found archive: $ARCHIVE"
           if [ "$RUNNER_OS" == "Linux" ]; then
             cp "$ARCHIVE" links-api-linux.tar.gz
           elif [ "$RUNNER_OS" == "macOS" ]; then
@@ -50,7 +51,11 @@ jobs:
           elif [ "$RUNNER_OS" == "Windows" ]; then
             cp "$ARCHIVE" links-api-windows.tar.gz
           fi
-          ls -la links-api-*.tar.gz
+          echo "Current directory: $(pwd)"
+          echo "Files matching pattern:"
+          ls -la links-api-*.tar.gz || echo "No files found!"
+          echo "All .tar.gz files:"
+          find . -name "*.tar.gz" -type f
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -58,6 +63,7 @@ jobs:
           name: links-api-${{ runner.os }}
           path: links-api-*.tar.gz
           overwrite: true
+          if-no-files-found: error
 
   release:
     needs: build
