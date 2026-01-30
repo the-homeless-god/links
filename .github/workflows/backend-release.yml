@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: links-api-${{ runner.os }}
-          path: links-api-*.tar.gz
+          path: elixir_backend/links-api-*.tar.gz
           overwrite: true
           if-no-files-found: error
 
@@ -112,4 +112,4 @@ jobs:
             ### Changes
             See the full changelog in the repository.
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
