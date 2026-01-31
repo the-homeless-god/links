@@ -83,6 +83,15 @@ jobs:
           overwrite: true
           if-no-files-found: warn
 
+      - name: Upload DMG artifact (macOS only)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: links-api-dmg
+          path: LinksAPI-*.dmg
+          overwrite: true
+          if-no-files-found: warn
+
   release:
     needs: build
     runs-on: ubuntu-latest

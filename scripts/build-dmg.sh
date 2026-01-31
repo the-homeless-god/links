@@ -206,9 +206,12 @@ EOF
 
 # Создание DMG
 echo -e "${GREEN}Создание DMG образа...${NC}"
-create-dmg \
+echo "DMG будет создан в: ${PROJECT_ROOT}/${DMG_NAME}"
+echo "Исходная директория: ${DMG_DIR}"
+
+# Упрощенный вызов create-dmg без опциональных параметров
+if create-dmg \
     --volname "Links API ${VERSION}" \
-    --volicon "${APP_DIR}/Contents/Resources/icon.icns" 2>/dev/null || true \
     --window-pos 200 120 \
     --window-size 800 500 \
     --icon-size 100 \
@@ -217,12 +220,16 @@ create-dmg \
     --icon "postinstall.sh" 600 190 \
     --hide-extension "${APP_NAME}.app" \
     --app-drop-link 600 385 \
-    "${DMG_NAME}" \
-    "${DMG_DIR}"
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ DMG создан: ${DMG_NAME}${NC}"
-    echo "Размер: $(du -h "${DMG_NAME}" | cut -f1)"
+    "${PROJECT_ROOT}/${DMG_NAME}" \
+    "${DMG_DIR}" 2>&1; then
+    if [ -f "${PROJECT_ROOT}/${DMG_NAME}" ]; then
+        echo -e "${GREEN}✓ DMG создан: ${PROJECT_ROOT}/${DMG_NAME}${NC}"
+        echo "Размер: $(du -h "${PROJECT_ROOT}/${DMG_NAME}" | cut -f1)"
+        ls -lh "${PROJECT_ROOT}/${DMG_NAME}"
+    else
+        echo -e "${RED}Ошибка: DMG файл не найден после создания${NC}"
+        exit 1
+    fi
 else
     echo -e "${RED}Ошибка при создании DMG${NC}"
     exit 1
