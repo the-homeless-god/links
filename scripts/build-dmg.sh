@@ -209,6 +209,9 @@ echo -e "${GREEN}Создание DMG образа...${NC}"
 echo "DMG будет создан в: ${PROJECT_ROOT}/${DMG_NAME}"
 echo "Исходная директория: ${DMG_DIR}"
 
+# Очищаем старые DMG файлы перед созданием
+rm -f "${PROJECT_ROOT}"/*.dmg
+
 # Упрощенный вызов create-dmg без опциональных параметров
 DMG_OUTPUT=$(create-dmg \
     --volname "Links API ${VERSION}" \
@@ -226,15 +229,19 @@ DMG_OUTPUT=$(create-dmg \
 DMG_EXIT_CODE=$?
 
 # create-dmg может создавать файл с другим именем (например, master.dmg вместо LinksAPI-0.1.0.dmg)
-# Ищем созданный DMG файл
-CREATED_DMG=$(find "${PROJECT_ROOT}" -maxdepth 1 -name "*.dmg" -type f -newer "${DMG_DIR}" 2>/dev/null | head -1)
+# Ищем созданный DMG файл - берем самый новый
+CREATED_DMG=$(find "${PROJECT_ROOT}" -maxdepth 1 -name "*.dmg" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)
+
+# Если не нашли через find с printf (macOS), используем ls
+if [ -z "$CREATED_DMG" ]; then
+    CREATED_DMG=$(ls -t "${PROJECT_ROOT}"/*.dmg 2>/dev/null | head -1)
+fi
 
 if [ $DMG_EXIT_CODE -eq 0 ] || [ -n "$CREATED_DMG" ]; then
-    if [ -n "$CREATED_DMG" ]; then
+    if [ -n "$CREATED_DMG" ] && [ "$CREATED_DMG" != "${PROJECT_ROOT}/${DMG_NAME}" ]; then
         # Переименовываем созданный файл в нужное имя
-        if [ "$CREATED_DMG" != "${PROJECT_ROOT}/${DMG_NAME}" ]; then
-            mv "$CREATED_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
-        fi
+        echo "Переименовываем $CREATED_DMG в ${PROJECT_ROOT}/${DMG_NAME}"
+        mv "$CREATED_DMG" "${PROJECT_ROOT}/${DMG_NAME}" 2>/dev/null || cp "$CREATED_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
     fi
     
     if [ -f "${PROJECT_ROOT}/${DMG_NAME}" ]; then
@@ -246,15 +253,20 @@ if [ $DMG_EXIT_CODE -eq 0 ] || [ -n "$CREATED_DMG" ]; then
         echo "Вывод create-dmg:"
         echo "$DMG_OUTPUT"
         # Пытаемся найти любой DMG файл в корне
-        FOUND_DMG=$(find "${PROJECT_ROOT}" -maxdepth 1 -name "*.dmg" -type f | head -1)
-        if [ -n "$FOUND_DMG" ]; then
+        FOUND_DMG=$(ls -t "${PROJECT_ROOT}"/*.dmg 2>/dev/null | head -1)
+        if [ -n "$FOUND_DMG" ] && [ -f "$FOUND_DMG" ]; then
             echo "Найден DMG файл: $FOUND_DMG"
-            mv "$FOUND_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
+            cp "$FOUND_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
             if [ -f "${PROJECT_ROOT}/${DMG_NAME}" ]; then
-                echo -e "${GREEN}✓ DMG переименован: ${PROJECT_ROOT}/${DMG_NAME}${NC}"
+                echo -e "${GREEN}✓ DMG скопирован: ${PROJECT_ROOT}/${DMG_NAME}${NC}"
+            else
+                echo -e "${RED}Ошибка: не удалось скопировать DMG файл${NC}"
+                exit 1
             fi
         else
             echo -e "${RED}Ошибка: DMG файл не найден после создания${NC}"
+            echo "Список файлов в ${PROJECT_ROOT}:"
+            ls -la "${PROJECT_ROOT}"/*.dmg 2>/dev/null || echo "DMG файлы не найдены"
             exit 1
         fi
     fi
