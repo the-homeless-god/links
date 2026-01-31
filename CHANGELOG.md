@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+## [0.1.7] - 2025-01-26
+
+### Исправлено
+- Исправлен working-directory для шага сборки DMG в GitHub Actions
+- Скрипт scripts/build-dmg.sh теперь находится корректно при выполнении в workflow
+
 ## [0.1.6] - 2025-01-26
 
 ### Исправлено
@@ -73,7 +79,8 @@
 - CI/CD через GitHub Actions
 - Документация API
 
-[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/the-homeless-god/links/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/the-homeless-god/links/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/the-homeless-god/links/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/the-homeless-god/links/compare/v0.1.3...v0.1.4
