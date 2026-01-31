@@ -1,3 +1,9 @@
+## [0.2.4](https://github.com/the-homeless-god/links/compare/v0.2.3...v0.2.4) (2026-01-31)
+
+### Bug Fixes
+
+* **release:** исправлено определение версии для DMG и обработка созданного файла ([f3e13e2](https://github.com/the-homeless-god/links/commit/f3e13e2aa2dc542ff04008a02010e29fea95c0ed))
+
 ## [0.2.3](https://github.com/the-homeless-god/links/compare/v0.2.2...v0.2.3) (2026-01-31)
 
 ### Bug Fixes
