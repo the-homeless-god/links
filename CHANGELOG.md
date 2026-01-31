@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-01-26
+
+### Исправлено
+- Исправлена сборка DMG (убраны опциональные параметры create-dmg, добавлен полный путь)
+- Добавлена проверка существования DMG файла после создания
+- Добавлен отдельный шаг загрузки DMG в артефакты для macOS
+- DMG теперь включается в GitHub Release вместе с tar.gz архивами
+
 ## [0.1.7] - 2025-01-26
 
 ### Исправлено
@@ -79,7 +87,8 @@
 - CI/CD через GitHub Actions
 - Документация API
 
-[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.7...HEAD
+[Unreleased]: https://github.com/the-homeless-god/links/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/the-homeless-god/links/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/the-homeless-god/links/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/the-homeless-god/links/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/the-homeless-god/links/compare/v0.1.4...v0.1.5
