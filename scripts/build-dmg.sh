@@ -210,7 +210,7 @@ echo "DMG будет создан в: ${PROJECT_ROOT}/${DMG_NAME}"
 echo "Исходная директория: ${DMG_DIR}"
 
 # Упрощенный вызов create-dmg без опциональных параметров
-if create-dmg \
+DMG_OUTPUT=$(create-dmg \
     --volname "Links API ${VERSION}" \
     --window-pos 200 120 \
     --window-size 800 500 \
@@ -221,17 +221,47 @@ if create-dmg \
     --hide-extension "${APP_NAME}.app" \
     --app-drop-link 600 385 \
     "${PROJECT_ROOT}/${DMG_NAME}" \
-    "${DMG_DIR}" 2>&1; then
+    "${DMG_DIR}" 2>&1)
+
+DMG_EXIT_CODE=$?
+
+# create-dmg может создавать файл с другим именем (например, master.dmg вместо LinksAPI-0.1.0.dmg)
+# Ищем созданный DMG файл
+CREATED_DMG=$(find "${PROJECT_ROOT}" -maxdepth 1 -name "*.dmg" -type f -newer "${DMG_DIR}" 2>/dev/null | head -1)
+
+if [ $DMG_EXIT_CODE -eq 0 ] || [ -n "$CREATED_DMG" ]; then
+    if [ -n "$CREATED_DMG" ]; then
+        # Переименовываем созданный файл в нужное имя
+        if [ "$CREATED_DMG" != "${PROJECT_ROOT}/${DMG_NAME}" ]; then
+            mv "$CREATED_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
+        fi
+    fi
+    
     if [ -f "${PROJECT_ROOT}/${DMG_NAME}" ]; then
         echo -e "${GREEN}✓ DMG создан: ${PROJECT_ROOT}/${DMG_NAME}${NC}"
         echo "Размер: $(du -h "${PROJECT_ROOT}/${DMG_NAME}" | cut -f1)"
         ls -lh "${PROJECT_ROOT}/${DMG_NAME}"
     else
-        echo -e "${RED}Ошибка: DMG файл не найден после создания${NC}"
-        exit 1
+        echo -e "${YELLOW}Предупреждение: DMG создан, но с другим именем${NC}"
+        echo "Вывод create-dmg:"
+        echo "$DMG_OUTPUT"
+        # Пытаемся найти любой DMG файл в корне
+        FOUND_DMG=$(find "${PROJECT_ROOT}" -maxdepth 1 -name "*.dmg" -type f | head -1)
+        if [ -n "$FOUND_DMG" ]; then
+            echo "Найден DMG файл: $FOUND_DMG"
+            mv "$FOUND_DMG" "${PROJECT_ROOT}/${DMG_NAME}"
+            if [ -f "${PROJECT_ROOT}/${DMG_NAME}" ]; then
+                echo -e "${GREEN}✓ DMG переименован: ${PROJECT_ROOT}/${DMG_NAME}${NC}"
+            fi
+        else
+            echo -e "${RED}Ошибка: DMG файл не найден после создания${NC}"
+            exit 1
+        fi
     fi
 else
     echo -e "${RED}Ошибка при создании DMG${NC}"
+    echo "Вывод create-dmg:"
+    echo "$DMG_OUTPUT"
     exit 1
 fi
 
