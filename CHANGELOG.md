@@ -1,3 +1,15 @@
+## [0.2.0](https://github.com/the-homeless-god/links/compare/v0.1.8...v0.2.0) (2026-01-31)
+
+### Features
+
+* **release:** добавлен semantic-release для автоматической генерации changelog и релизов ([4598421](https://github.com/the-homeless-god/links/commit/45984212c6d10a33db13a4731c6a182cb82210f0))
+
+### Bug Fixes
+
+* **release:** добавлен conventional-changelog-conventionalcommits ([ebacd1b](https://github.com/the-homeless-god/links/commit/ebacd1b1b60748403fbff8638b55f577a8f5696f))
+* **release:** добавлены недостающие плагины semantic-release ([8dfdaa3](https://github.com/the-homeless-god/links/commit/8dfdaa31a29a0910a661cd35e36dc5b2fbbd52e6))
+* **release:** убрано кеширование npm из workflow ([fd7f780](https://github.com/the-homeless-god/links/commit/fd7f78075b7f1fcb849d30052e069209f32a4c21))
+
 # Changelog
 
 Все значимые изменения в проекте будут документироваться в этом файле.
