@@ -38,6 +38,14 @@ dev: ## Запустить в режиме разработки
 prod: ## Собрать production релиз
 	cd elixir_backend && MIX_ENV=prod mix release
 
+dmg: ## Собрать DMG для macOS (требует собранный релиз)
+	@if [ ! -f scripts/build-dmg.sh ]; then \
+		echo "Ошибка: скрипт build-dmg.sh не найден"; \
+		exit 1; \
+	fi
+	chmod +x scripts/build-dmg.sh
+	./scripts/build-dmg.sh 0.1.0
+
 links: ## Получить список ссылок (требует запущенный сервер)
 	curl http://localhost:4000/api/links -H "X-Guest-Token: guest"
 

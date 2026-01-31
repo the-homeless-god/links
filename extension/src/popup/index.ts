@@ -377,6 +377,7 @@ async function fillCurrentPageUrl(): Promise<void> {
 
 // Настройка обработчиков событий
 function setupEventListeners(): void {
+  const docsBtn = document.getElementById('docsBtn');
   const reloadBtn = document.getElementById('reloadBtn');
   const addLinkBtn = document.getElementById('addLinkBtn');
   const closeBtn = document.querySelector('.close');
@@ -387,6 +388,12 @@ function setupEventListeners(): void {
   const importBtn = document.getElementById('importBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+
+  if (docsBtn) {
+    docsBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://the-homeless-god.github.io/links/' });
+    });
+  }
 
   if (reloadBtn) {
     reloadBtn.addEventListener('click', async () => {

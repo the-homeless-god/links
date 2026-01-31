@@ -57,13 +57,30 @@ jobs:
           echo "All .tar.gz files:"
           find . -name "*.tar.gz" -type f
 
+      - name: Build Chrome Extension (macOS only)
+        if: runner.os == 'macOS'
+        working-directory: extension
+        run: |
+          npm install
+          npm run build:release
+
+      - name: Build DMG (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg || true
+          chmod +x scripts/build-dmg.sh
+          VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//' || echo "0.1.0")
+          ./scripts/build-dmg.sh "$VERSION"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: links-api-${{ runner.os }}
-          path: elixir_backend/links-api-*.tar.gz
+          path: |
+            elixir_backend/links-api-*.tar.gz
+            LinksAPI-*.dmg
           overwrite: true
-          if-no-files-found: error
+          if-no-files-found: warn
 
   release:
     needs: build
@@ -90,13 +107,23 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*.tar.gz
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.dmg
           tag_name: ${{ steps.version.outputs.version }}
           name: Links API Backend ${{ steps.version.outputs.version }}
           body: |
             ## Links API Backend ${{ steps.version.outputs.version }}
 
             ### Installation
+
+            **macOS (DMG):**
+            1. Download `LinksAPI-*.dmg`
+            2. Open DMG and drag `Links API.app` to Applications
+            3. Install Chrome Extension from DMG (see instructions in DMG)
+            4. Launch the app from Applications
+
+            **Other platforms:**
             1. Download the archive for your OS
             2. Extract the archive
             3. Run `./bin/links_api start` (or `bin\links_api.bat start` on Windows)
@@ -108,6 +135,9 @@ jobs:
             Set environment variables:
             - `PORT` - Server port (default: 4000)
             - `DATABASE_PATH` - SQLite database path (default: priv/db/links.db)
+
+            ### Documentation
+            Full documentation: https://the-homeless-god.github.io/links/
 
             ### Changes
             See the full changelog in the repository.
