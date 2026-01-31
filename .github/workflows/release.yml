@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install semantic-release
+        run: |
+          npm install -g semantic-release @semantic-release/changelog @semantic-release/git
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          semantic-release
+
+  build-and-release:
+    name: Build and Release Artifacts
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-2022]
+    defaults:
+      run:
+        working-directory: elixir_backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16.0'
+          otp-version: '27.0'
+
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Build release
+        env:
+          MIX_ENV: prod
+        run: mix release
+
+      - name: Rename archive
+        shell: bash
+        run: |
+          ARCHIVE=$(ls _build/prod/links_api-*.tar.gz | head -1)
+          echo "Found archive: $ARCHIVE"
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            cp "$ARCHIVE" links-api-linux.tar.gz
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            cp "$ARCHIVE" links-api-macos.tar.gz
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            cp "$ARCHIVE" links-api-windows.tar.gz
+          fi
+          echo "Current directory: $(pwd)"
+          echo "Files matching pattern:"
+          ls -la links-api-*.tar.gz || echo "No files found!"
+
+      - name: Build Chrome Extension (macOS only)
+        if: runner.os == 'macOS'
+        working-directory: extension
+        run: |
+          npm install
+          npm run build:release
+
+      - name: Build DMG (macOS only)
+        if: runner.os == 'macOS'
+        working-directory: .
+        run: |
+          brew install create-dmg || true
+          chmod +x scripts/build-dmg.sh
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.1.0")
+          ./scripts/build-dmg.sh "$VERSION"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: links-api-${{ runner.os }}
+          path: |
+            elixir_backend/links-api-*.tar.gz
+            LinksAPI-*.dmg
+          overwrite: true
+          if-no-files-found: warn
+
+      - name: Upload DMG artifact (macOS only)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: links-api-dmg
+          path: LinksAPI-*.dmg
+          overwrite: true
+          if-no-files-found: warn
+
+  upload-to-release:
+    name: Upload Artifacts to Release
+    needs: [release, build-and-release]
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.1.0")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.dmg
+          tag_name: ${{ needs.release.outputs.new_release_version }}
+          name: Links API Backend ${{ needs.release.outputs.new_release_version }}
+          body: |
+            ${{ needs.release.outputs.new_release_notes }}
+
+            ## Installation
+
+            **macOS:**
+            - Download `LinksAPI-*.dmg` and follow the installation instructions
+
+            **Other platforms:**
+            1. Download the archive for your OS
+            2. Extract the archive
+            3. Run `./bin/links_api start` (or `bin\links_api.bat start` on Windows)
+
+            ## Configuration
+            Set environment variables:
+            - `PORT` - Server port (default: 4000)
+            - `DATABASE_PATH` - SQLite database path (default: priv/db/links.db)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

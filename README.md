@@ -379,9 +379,14 @@ mix credo          # Линтер кода
 3. Убедитесь, что код отформатирован и проходит все проверки:
    - Backend: `mix format`, `mix credo`, `mix test`
    - Extension: `npm run format`, `npm run lint`, `npm test`
-4. Закоммитьте изменения (`git commit -m 'Add some amazing feature'`)
+4. Закоммитьте изменения, следуя [Conventional Commits](https://www.conventionalcommits.org/):
+   - `feat(api): добавлена новая функциональность` (создаст minor релиз)
+   - `fix(auth): исправлен баг авторизации` (создаст patch релиз)
+   - `docs: обновлена документация` (не создаст релиз)
 5. Отправьте ветку (`git push origin feature/amazing-feature`)
 6. Откройте Pull Request — все проверки CI/CD запустятся автоматически
+
+**Примечание:** Проект использует [semantic-release](https://github.com/semantic-release/semantic-release) для автоматической генерации changelog и релизов на основе коммитов.
 
 ## Лицензия
 

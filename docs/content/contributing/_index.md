@@ -14,7 +14,8 @@ weight: 50
 2. Создайте ветку для вашей функциональности (`git checkout -b feature/amazing-feature`)
 3. Внесите изменения
 4. Убедитесь, что код проходит все проверки
-5. Закоммитьте изменения (`git commit -m 'Add some amazing feature'`)
+5. Закоммитьте изменения, следуя [Conventional Commits]({{< relref "commits" >}})
+   - Пример: `git commit -m 'feat(api): добавлена поддержка публичных ссылок'`
 6. Отправьте ветку (`git push origin feature/amazing-feature`)
 7. Откройте Pull Request
 
