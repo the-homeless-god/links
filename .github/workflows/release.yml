@@ -5,10 +5,13 @@ on:
     branches:
       - master
       - main
+  release:
+    types: [published, created]
 
 jobs:
   release:
     name: Semantic Release
+    if: github.event_name != 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,12 +37,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          semantic-release
+          semantic-release || true
 
   build-and-release:
     name: Build and Release Artifacts
-    needs: release
-    if: needs.release.outputs.new_release_published == 'true'
+    if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -51,6 +53,8 @@ jobs:
         working-directory: elixir_backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
@@ -97,7 +101,11 @@ jobs:
         run: |
           brew install create-dmg || true
           chmod +x scripts/build-dmg.sh
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.1.0")
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.1.0")
+          fi
           ./scripts/build-dmg.sh "$VERSION"
 
       - name: Upload artifact
@@ -121,8 +129,8 @@ jobs:
 
   upload-to-release:
     name: Upload Artifacts to Release
-    needs: [release, build-and-release]
-    if: needs.release.outputs.new_release_published == 'true'
+    needs: build-and-release
+    if: always() && (needs.build-and-release.result == 'success' || needs.build-and-release.result == 'failure')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -132,8 +140,15 @@ jobs:
       - name: Get version
         id: version
         run: |
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//' || echo "0.1.0")
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+            VERSION=$(echo "$TAG" | sed 's/^v//')
+          else
+            TAG=$(git describe --tags --abbrev=0 || echo "v0.1.0")
+            VERSION=$(echo "$TAG" | sed 's/^v//')
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -146,10 +161,10 @@ jobs:
           files: |
             artifacts/**/*.tar.gz
             artifacts/**/*.dmg
-          tag_name: ${{ needs.release.outputs.new_release_version }}
-          name: Links API Backend ${{ needs.release.outputs.new_release_version }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Links API Backend ${{ steps.version.outputs.version }}
           body: |
-            ${{ needs.release.outputs.new_release_notes }}
+            ${{ github.event.release.body || 'See CHANGELOG.md for details' }}
 
             ## Installation
 
