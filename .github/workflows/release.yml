@@ -106,19 +106,23 @@ jobs:
         run: |
           brew install create-dmg || true
           chmod +x scripts/build-dmg.sh
-          # Определяем версию
+          # Определяем версию - всегда из последнего тега
+          git fetch --tags --force 2>/dev/null || true
           if [ "${{ github.event_name }}" == "release" ]; then
             # Из события release берем tag_name
             VERSION="${{ github.event.release.tag_name }}"
-            VERSION=$(echo "$VERSION" | sed 's/^v//')
           elif [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             # Если это push тега, берем из ref
             VERSION="${{ github.ref }}"
-            VERSION=$(echo "$VERSION" | sed 's|refs/tags/v||')
+            VERSION=$(echo "$VERSION" | sed 's|refs/tags/||')
           else
-            # Иначе берем последний тег из git
+            # Иначе берем последний тег из git (обязательно с fetch)
             VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.1.0")
           fi
+          # Убираем префикс 'v' если есть
+          VERSION=$(echo "$VERSION" | sed 's/^v//')
+          # Очищаем версию от недопустимых символов (слэши, пробелы и т.д.)
+          VERSION=$(echo "$VERSION" | tr -d '/\\' | tr ' ' '_')
           echo "Building DMG with version: $VERSION"
           ./scripts/build-dmg.sh "$VERSION"
 
