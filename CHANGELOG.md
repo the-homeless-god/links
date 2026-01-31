@@ -1,3 +1,9 @@
+## [0.2.5](https://github.com/the-homeless-god/links/compare/v0.2.4...v0.2.5) (2026-01-31)
+
+### Bug Fixes
+
+* **release:** исправлено определение версии ([d63092a](https://github.com/the-homeless-god/links/commit/d63092a67d1270f07c6e77e0034e43a1f37916ae))
+
 ## [0.2.4](https://github.com/the-homeless-god/links/compare/v0.2.3...v0.2.4) (2026-01-31)
 
 ### Bug Fixes
