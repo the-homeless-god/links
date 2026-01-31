@@ -5,6 +5,8 @@ on:
     branches:
       - master
       - main
+    tags:
+      - 'v*'
   release:
     types: [published, created]
 
@@ -39,8 +41,8 @@ jobs:
         run: |
           semantic-release || true
 
-  build-and-release:
-    name: Build and Release Artifacts
+  build-backend:
+    name: Build Backend
     if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ${{ matrix.os }}
     permissions:
@@ -94,6 +96,9 @@ jobs:
         run: |
           npm install
           npm run build:release
+          cd dist
+          zip -r ../extension.zip .
+          cd ..
 
       - name: Build DMG (macOS only)
         if: runner.os == 'macOS'
@@ -108,13 +113,11 @@ jobs:
           fi
           ./scripts/build-dmg.sh "$VERSION"
 
-      - name: Upload artifact
+      - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
           name: links-api-${{ runner.os }}
-          path: |
-            elixir_backend/links-api-*.tar.gz
-            LinksAPI-*.dmg
+          path: elixir_backend/links-api-*.tar.gz
           overwrite: true
           if-no-files-found: warn
 
@@ -127,10 +130,55 @@ jobs:
           overwrite: true
           if-no-files-found: warn
 
+      - name: Upload extension artifact (macOS only)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: extension/extension.zip
+          overwrite: true
+          if-no-files-found: warn
+
+  build-extension:
+    name: Build Extension
+    if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Create ZIP file
+        run: |
+          cd dist
+          zip -r ../extension.zip .
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: extension/extension.zip
+          overwrite: true
+          if-no-files-found: warn
+
   upload-to-release:
     name: Upload Artifacts to Release
-    needs: build-and-release
-    if: always() && (needs.build-and-release.result == 'success' || needs.build-and-release.result == 'failure')
+    needs: [build-backend, build-extension]
+    if: always() && (needs.build-backend.result == 'success' || needs.build-extension.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -161,24 +209,38 @@ jobs:
           files: |
             artifacts/**/*.tar.gz
             artifacts/**/*.dmg
+            artifacts/**/extension.zip
           tag_name: ${{ steps.version.outputs.tag }}
-          name: Links API Backend ${{ steps.version.outputs.version }}
+          name: Links API ${{ steps.version.outputs.version }}
           body: |
             ${{ github.event.release.body || 'See CHANGELOG.md for details' }}
 
             ## Installation
 
-            **macOS:**
-            - Download `LinksAPI-*.dmg` and follow the installation instructions
+            **macOS (DMG):**
+            1. Download `LinksAPI-*.dmg`
+            2. Open DMG and drag `Links API.app` to Applications
+            3. Install Chrome Extension from DMG (see instructions in DMG)
+            4. Launch the app from Applications
 
             **Other platforms:**
             1. Download the archive for your OS
             2. Extract the archive
             3. Run `./bin/links_api start` (or `bin\links_api.bat start` on Windows)
 
+            **Chrome Extension:**
+            1. Download `extension.zip`
+            2. Unzip the file
+            3. Open Chrome and go to `chrome://extensions/`
+            4. Enable "Developer mode"
+            5. Click "Load unpacked" and select the unzipped folder
+
             ## Configuration
             Set environment variables:
             - `PORT` - Server port (default: 4000)
             - `DATABASE_PATH` - SQLite database path (default: priv/db/links.db)
+
+            ## Documentation
+            Full documentation: https://the-homeless-god.github.io/links/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
