@@ -66,6 +66,7 @@ jobs:
 
       - name: Build DMG (macOS only)
         if: runner.os == 'macOS'
+        working-directory: .
         run: |
           brew install create-dmg || true
           chmod +x scripts/build-dmg.sh
