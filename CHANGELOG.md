@@ -5,6 +5,9 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+> **Примечание:** Этот файл автоматически генерируется с помощью [semantic-release](https://github.com/semantic-release/semantic-release).
+> Коммиты должны следовать [Conventional Commits](https://www.conventionalcommits.org/) для автоматической генерации.
+
 ## [Unreleased]
 
 ## [0.1.8] - 2025-01-26
