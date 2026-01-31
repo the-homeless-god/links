@@ -1,3 +1,9 @@
+## [0.2.2](https://github.com/the-homeless-god/links/compare/v0.2.1...v0.2.2) (2026-01-31)
+
+### Bug Fixes
+
+* **release:** update release message format to remove [skip ci] ([eb5df30](https://github.com/the-homeless-god/links/commit/eb5df30e5c346fb26dbf2931ec3fea92b91e7bc6))
+
 ## [0.2.1](https://github.com/the-homeless-god/links/compare/v0.2.0...v0.2.1) (2026-01-31)
 
 ### Bug Fixes
