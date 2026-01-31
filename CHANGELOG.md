@@ -1,3 +1,9 @@
+## [0.2.3](https://github.com/the-homeless-god/links/compare/v0.2.2...v0.2.3) (2026-01-31)
+
+### Bug Fixes
+
+* **release:** добавлен триггер на push тегов для сборки артефактов ([ff3dff5](https://github.com/the-homeless-god/links/commit/ff3dff5f31d9a72cb1fd5704f8d5afa87a103c4b))
+
 ## [0.2.2](https://github.com/the-homeless-god/links/compare/v0.2.1...v0.2.2) (2026-01-31)
 
 ### Bug Fixes
